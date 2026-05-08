@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: airbnb-api
+    env: node
+    rootDir: .
+    buildCommand: cd airbnb-api && npm install && npx prisma generate && npm run build && npx prisma migrate deploy
+    startCommand: cd airbnb-api && npm start
+    autoDeploy: true

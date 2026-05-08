@@ -1,0 +1,113 @@
+.listing-card {
+  display: grid;
+  gap: 12px;
+}
+
+.listing-card__media {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  aspect-ratio: 1 / 1;
+  background: #f3f4f6;
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.08);
+}
+
+.listing-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.listing-card__badge,
+.listing-card__luxury {
+  position: absolute;
+  top: 14px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #111827;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.08);
+}
+
+.listing-card__badge {
+  left: 14px;
+}
+
+.listing-card__luxury {
+  left: 118px;
+}
+
+.listing-card__save {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(17, 24, 39, 0.5);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.listing-card__save--active {
+  background: #ff5a5f;
+}
+
+.listing-card__content {
+  display: grid;
+  gap: 8px;
+}
+
+.listing-card__title-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.listing-card__title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: #111827;
+}
+
+.listing-card__rating {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.listing-card__location,
+.listing-card__meta,
+.listing-card__availability {
+  margin: 0;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listing-card__meta strong {
+  color: #111827;
+}
+
+.listing-card__availability {
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.listing-card__availability.is-booked {
+  color: #b91c1c;
+}

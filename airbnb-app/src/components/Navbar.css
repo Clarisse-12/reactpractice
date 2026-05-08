@@ -1,0 +1,162 @@
+/* Navbar styles matching src/components/Navbar.tsx */
+.navbar {
+  height: 164px; /* matches layout calc in App.css */
+  display: grid;
+  grid-template-columns: 220px 1fr 380px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 48px;
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 40px;
+  color: #0f172a;
+}
+
+.navbar__brand-main {
+  color: #0f172a;
+}
+
+.navbar__brand-accent {
+  color: #ff5a5f;
+  font-family: 'Segoe Script', 'Brush Script MT', cursive;
+  font-weight: 700;
+  font-size: 38px;
+}
+
+.navbar__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
+}
+
+.navbar__menu a {
+  text-decoration: none;
+  padding: 8px 6px 22px 6px; /* extra bottom for underline */
+  color: #0b1220;
+  font-weight: 600;
+  font-size: 18px;
+  position: relative;
+}
+
+.navbar__menu a::after {
+  content: "▾";
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.navbar__menu a.normal:hover {
+  color: #111827;
+}
+
+.navbar__menu a.active {
+  color: #ff5a5f;
+}
+
+/* underline bar for active link */
+.navbar__menu a.active::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 6px;
+  width: 56px;
+  height: 4px;
+  background: #ff5a5f;
+  border-radius: 2px;
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.navbar__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  color: #111827;
+}
+
+.navbar__icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.navbar__badge {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  background: #ff5a5f;
+  color: white;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.navbar__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  background: #ff5a5f;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 6px 18px rgba(255,90,95,0.12);
+}
+
+.navbar__cta-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    grid-template-columns: 1fr auto;
+    height: 80px;
+    padding: 0 16px;
+  }
+
+  .navbar__menu {
+    display: none;
+  }
+
+  .navbar__actions {
+    gap: 8px;
+  }
+}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./Navbar.css";
-import { NavLink } from "react-router-dom";
-import { FiHeart, FiPlus, FiX } from "react-icons/fi";
+import { NavLink, Link } from "react-router-dom";
+import { FiHeart, FiPlus, FiX, FiUser } from "react-icons/fi";
 import { Transition } from "@headlessui/react";
 import numeral from "numeral";
 import { useStore } from "../store/StoreContext";
@@ -49,6 +49,9 @@ export default function Navbar() {
           <FiHeart className="navbar__icon" />
           <span className="navbar__badge">{state.saved.length}</span>
         </button>
+        <Link to="/signup" className="navbar__profile-button" aria-label="Profile">
+          <FiUser className="navbar__icon" />
+        </Link>
         <button className="navbar__cta" type="button">
           <span className="navbar__cta-plus"><FiPlus aria-hidden="true" /></span>
           Add Listing

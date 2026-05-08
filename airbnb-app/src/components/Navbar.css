@@ -100,6 +100,26 @@
   color: #111827;
 }
 
+.navbar__profile-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  color: #111827;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.navbar__profile-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .navbar__icon {
   font-size: 22px;
   line-height: 1;

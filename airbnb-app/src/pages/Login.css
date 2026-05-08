@@ -1,0 +1,29 @@
+.login-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.login-container {
+  width: min(880px, 100%);
+}
+
+.login-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    align-items: flex-start;
+    padding: 24px 16px 40px;
+  }
+
+  .login-container {
+    width: 100%;
+  }
+}

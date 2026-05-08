@@ -17,11 +17,24 @@
   align-items: center;
 }
 
+.signup-page--center {
+  align-items: center;
+}
+
+.signup-container--center {
+  grid-template-columns: 1fr;
+  width: min(880px, 100%);
+}
+
 @media (max-width: 1024px) {
   .signup-container {
     grid-template-columns: 1fr;
     gap: 32px;
     padding: 40px 24px;
+  }
+
+  .signup-container--center {
+    width: 100%;
   }
 }
 

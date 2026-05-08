@@ -1,0 +1,20 @@
+.site-footer { background: #0f1316; color: #cbd5e1; padding: 40px 24px }
+.site-footer__inner { max-width: 1200px; margin: 0 auto }
+.site-footer__cols { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding: 28px 0 }
+.site-footer__col h4 { color:#fff; margin:0 0 12px }
+.site-footer__col p { margin:0 0 12px }
+.site-footer__whatsapp p { margin:0 0 6px }
+.site-footer__wh-icon { margin-right:8px }
+.site-footer__subscribe { display:flex; gap:8px; align-items:center; background: rgba(255,255,255,0.02); padding:12px; border-radius:30px }
+.site-footer__subscribe input { border:0; background:transparent; color:#fff; outline:none; flex:1 }
+.site-footer__subscribe-btn { background:#ff5a3c; color:#fff; border:0; padding:10px 14px; border-radius:999px }
+.site-footer__socials { display:flex; gap:12px; margin-top:12px }
+.site-footer__bottom { display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.03); padding-top:18px }
+.site-footer__brand { display:flex; gap:20px; align-items:center }
+.site-footer__logo { font-size:2rem; color:#fff; font-weight:700 }
+.site-footer__links a { margin-left:18px; color:#94a3b8 }
+
+@media (max-width: 768px) {
+  .site-footer__cols { grid-template-columns: 1fr; }
+  .site-footer__bottom { flex-direction:column; gap:12px; align-items:flex-start }
+}

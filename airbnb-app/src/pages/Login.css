@@ -21,6 +21,264 @@ html.dark .login-page {
   gap: 24px;
 }
 
+.login-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.login-forgot-link {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-forgot-link:hover {
+  opacity: 0.8;
+}
+
+.login-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* Forgot password modal */
+.fp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.fp-modal {
+  background: #fff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: fp-pop 0.2s ease;
+}
+
+@keyframes fp-pop {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.fp-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.fp-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #222;
+}
+
+.fp-modal__title svg {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.fp-modal__title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.fp-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: #f3f4f6;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.fp-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.fp-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fp-modal__desc {
+  margin: 0;
+  color: #666;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.fp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fp-field label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #888;
+}
+
+.fp-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #222;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.fp-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 90, 95, 0.1);
+}
+
+.fp-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 0.88rem;
+}
+
+.fp-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.fp-success svg {
+  font-size: 2.5rem;
+  color: #16a34a;
+}
+
+.fp-success p {
+  margin: 0;
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.fp-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.fp-btn {
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fp-btn--cancel {
+  background: #f3f4f6;
+  color: #444;
+}
+
+.fp-btn--cancel:hover {
+  background: #e5e7eb;
+}
+
+.fp-btn--send {
+  background: linear-gradient(135deg, var(--accent), #ff8d52);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(255, 90, 95, 0.25);
+}
+
+.fp-btn--send:hover {
+  opacity: 0.92;
+}
+
+.fp-btn--send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fp-btn--close {
+  background: #f3f4f6;
+  color: #444;
+}
+
+html.dark .fp-modal {
+  background: #1a2030;
+}
+
+html.dark .fp-modal__header {
+  border-bottom-color: var(--surface-border);
+}
+
+html.dark .fp-modal__title {
+  color: var(--app-text);
+}
+
+html.dark .fp-modal__close {
+  background: #2a313b;
+  color: var(--app-text);
+}
+
+html.dark .fp-field input {
+  background: #11161c;
+  border-color: var(--surface-border);
+  color: var(--app-text);
+}
+
 @media (max-width: 768px) {
   .login-page {
     align-items: flex-start;
@@ -29,5 +287,10 @@ html.dark .login-page {
 
   .login-container {
     width: 100%;
+  }
+
+  .login-form-footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

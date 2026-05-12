@@ -66,6 +66,12 @@ export const login = async (payload: { email: string; password: string }) => {
 
 export const me = async () => apiGet<any>("/auth/me", true)
 
+export const changePassword = async (payload: { currentPassword: string; newPassword: string }) =>
+  apiPost<{ message: string }>("/auth/change-password", payload, true)
+
+export const forgotPassword = async (email: string) =>
+  apiPost<{ message: string }>("/auth/forgot-password", { email }, false)
+
 export const createListing = async (payload: unknown) => apiPost<any>("/listings", payload, true)
 export const updateListing = async (id: string, payload: unknown) => apiPut<any>(`/listings/${id}`, payload, true)
 export const deleteListing = async (id: string) => apiDelete<any>(`/listings/${id}`, true)

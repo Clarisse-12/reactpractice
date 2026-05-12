@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import "./Navbar.css";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon } from "react-icons/fi";
 import { auth } from '../services/api'
 import { Transition } from "@headlessui/react";
@@ -9,6 +9,7 @@ import { useStore } from "../store/StoreContext";
 import { useFavorites } from "../features/listings/hooks/useFavorites";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const { state, dispatch } = useStore();
   const { toggle } = useFavorites();
@@ -101,6 +102,7 @@ export default function Navbar() {
             <button className="navbar__logout navbar__logout--pill" type="button" onClick={() => {
               auth.removeToken()
               dispatch({ type: 'LOGOUT' })
+              navigate('/')
             }}>
               Logout
             </button>

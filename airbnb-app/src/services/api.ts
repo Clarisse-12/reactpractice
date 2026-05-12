@@ -78,6 +78,12 @@ export const uploadListingPhotos = async (listingId: string, files: File[]) => {
   return handleResponse<any>(res)
 }
 
+export const deleteListingPhoto = async (listingId: string, photoId: string) => {
+  const headers: Record<string,string> = { ...(authHeaders() as Record<string,string>) }
+  const res = await fetch(`${apiBaseUrl}/upload/listings/${listingId}/photos/${photoId}`, { method: "DELETE", headers })
+  return handleResponse<any>(res)
+}
+
 export const getListings = async (params?: { type?: string; maxPrice?: string; location?: string }) => {
   const query = new URLSearchParams()
   if (params?.type) query.set('type', params.type)

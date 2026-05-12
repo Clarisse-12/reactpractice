@@ -30,7 +30,19 @@ export default function AddListing() {
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files
     if (!list) return
-    const newFiles = Array.from(list)
+    const newFiles = Array.from(list).filter((f) => {
+      if (!f.type.startsWith('image/')) {
+        setError(`"${f.name}" is not an image file`)
+        return false
+      }
+      if (f.size > 5 * 1024 * 1024) {
+        setError(`"${f.name}" exceeds 5MB limit`)
+        return false
+      }
+      return true
+    })
+    if (!newFiles.length) return
+    setError('')
     setFiles((prev) => [...prev, ...newFiles])
     newFiles.forEach((f) => {
       const reader = new FileReader()
@@ -77,10 +89,24 @@ export default function AddListing() {
         amenities: selectedAmenities,
       }
       const listing = await createListing(payload)
-      if (files.length > 0 && listing?.id) {
-        await uploadListingPhotos(listing.id, files)
+
+      if (!listing?.id) {
+        throw new Error('Listing created but no ID returned')
       }
-      navigate('/listings')
+
+      if (files.length > 0) {
+        try {
+          await uploadListingPhotos(listing.id, files)
+        } catch (uploadErr: any) {
+          // Listing was created — navigate but warn about photos
+          setError(`Listing saved but photos failed: ${uploadErr?.message || 'upload error'}. You can add photos by editing the listing.`)
+          setSubmitting(false)
+          setTimeout(() => navigate('/dashboard/listings'), 3000)
+          return
+        }
+      }
+
+      navigate('/dashboard/listings')
     } catch (err: any) {
       setError(err?.message || 'Failed to create listing')
     } finally {

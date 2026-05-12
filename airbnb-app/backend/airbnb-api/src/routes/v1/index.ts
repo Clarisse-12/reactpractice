@@ -14,7 +14,7 @@ v1Router.use("/users", usersRouter);
 v1Router.use("/listings", listingsRouter);
 v1Router.use("/bookings", bookingsRouter);
 v1Router.use("/", reviewsRouter);
-v1Router.use("/", uploadRouter);
+v1Router.use("/upload", uploadRouter);
 v1Router.use("/ai", aiRouter);
 
 export default v1Router;

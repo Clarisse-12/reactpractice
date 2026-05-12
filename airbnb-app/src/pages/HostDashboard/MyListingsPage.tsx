@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit3, FiPlus, FiTrash2, FiMapPin, FiHome, FiDollarSign } from 'react-icons/fi';
-import { deleteListing, me, updateListing } from '../../services/api';
+import { FiEdit3, FiPlus, FiTrash2, FiMapPin, FiHome, FiDollarSign, FiUploadCloud, FiX } from 'react-icons/fi';
+import { deleteListing, deleteListingPhoto, me, updateListing, uploadListingPhotos } from '../../services/api';
 import './MyListingsPage.css';
 
+interface Photo { id: string; url: string; publicId?: string }
 interface Listing {
   id: string;
   title?: string;
@@ -12,62 +13,41 @@ interface Listing {
   pricePerNight?: number;
   guests?: number;
   type?: string;
-  photos?: Array<{ url?: string }>;
-}
-
-interface ListingFormState {
-  title: string;
-  description: string;
-  location: string;
-  pricePerNight: string;
-  guests: string;
-  type: string;
+  amenities?: string[];
+  photos?: Photo[];
 }
 
 export function MyListingsPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingListingId, setEditingListingId] = useState<string | null>(null);
-  const [form, setForm] = useState<ListingFormState>({
-    title: '',
-    description: '',
-    location: '',
-    pricePerNight: '',
-    guests: '',
-    type: 'APARTMENT',
-  });
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [form, setForm] = useState({ title: '', description: '', location: '', pricePerNight: '', guests: '', type: 'APARTMENT' });
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadListings = async () => {
-      try {
-        setLoading(true);
-        const user = await me();
-        const userListings = Array.isArray(user?.listings) ? user.listings : [];
-        setListings(userListings);
-      } catch (err: any) {
-        setError(err?.message || 'Failed to load listings');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadListings();
+    me().then((user) => {
+      setListings(Array.isArray(user?.listings) ? user.listings : []);
+    }).catch((err: any) => setError(err?.message || 'Failed to load listings'))
+      .finally(() => setLoading(false));
   }, []);
 
-  const stats = useMemo(
-    () => ({
-      total: listings.length,
-      apartments: listings.filter((listing) => String(listing.type).toUpperCase() === 'APARTMENT').length,
-      villas: listings.filter((listing) => String(listing.type).toUpperCase() === 'VILLA').length,
-      houses: listings.filter((listing) => String(listing.type).toUpperCase() === 'HOUSE').length,
-    }),
-    [listings]
-  );
+  const stats = useMemo(() => ({
+    total: listings.length,
+    apartments: listings.filter((l) => String(l.type).toUpperCase() === 'APARTMENT').length,
+    villas: listings.filter((l) => String(l.type).toUpperCase() === 'VILLA').length,
+    houses: listings.filter((l) => String(l.type).toUpperCase() === 'HOUSE').length,
+  }), [listings]);
 
   const openEditor = (listing: Listing) => {
-    setEditingListingId(listing.id);
+    setEditingListing(listing);
     setForm({
       title: listing.title || '',
       description: listing.description || '',
@@ -76,13 +56,50 @@ export function MyListingsPage() {
       guests: String(listing.guests || ''),
       type: listing.type || 'APARTMENT',
     });
+    setPhotos(listing.photos || []);
+    setNewFiles([]);
+    setNewPreviews([]);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remaining = 5 - photos.length - newFiles.length;
+    const toAdd = files.slice(0, remaining);
+    setNewFiles((prev) => [...prev, ...toAdd]);
+    toAdd.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setNewPreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(f);
+    });
+  };
+
+  const removeNewFile = (index: number) => {
+    setNewFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!editingListing) return;
+    setDeletingPhotoId(photoId);
+    try {
+      await deleteListingPhoto(editingListing.id, photoId);
+      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      setListings((prev) => prev.map((l) =>
+        l.id === editingListing.id ? { ...l, photos: (l.photos || []).filter((p) => p.id !== photoId) } : l
+      ));
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete photo');
+    } finally {
+      setDeletingPhotoId(null);
+    }
   };
 
   const handleSave = async () => {
-    if (!editingListingId) return;
-
+    if (!editingListing) return;
+    setSaving(true);
     try {
-      const updated = await updateListing(editingListingId, {
+      const updated = await updateListing(editingListing.id, {
         title: form.title,
         description: form.description,
         location: form.location,
@@ -91,31 +108,41 @@ export function MyListingsPage() {
         type: form.type,
       });
 
-      setListings((prev) => prev.map((listing) => (listing.id === editingListingId ? { ...listing, ...updated } : listing)));
-      setEditingListingId(null);
+      let updatedPhotos = photos;
+      if (newFiles.length > 0) {
+        const res = await uploadListingPhotos(editingListing.id, newFiles);
+        updatedPhotos = res?.photos || photos;
+      }
+
+      setListings((prev) => prev.map((l) =>
+        l.id === editingListing.id ? { ...l, ...updated, photos: updatedPhotos } : l
+      ));
+      setEditingListing(null);
     } catch (err: any) {
       setError(err?.message || 'Failed to update listing');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (listingId: string) => {
-    const confirmDelete = window.confirm('Delete this listing?');
-    if (!confirmDelete) return;
-
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this listing?')) return;
     try {
-      await deleteListing(listingId);
-      setListings((prev) => prev.filter((listing) => listing.id !== listingId));
+      await deleteListing(id);
+      setListings((prev) => prev.filter((l) => l.id !== id));
     } catch (err: any) {
       setError(err?.message || 'Failed to delete listing');
     }
   };
+
+  const totalPhotoSlots = photos.length + newFiles.length;
 
   return (
     <div className="my-listings-page">
       <header className="my-listings-hero">
         <div>
           <p className="my-listings-eyebrow">Host Listings</p>
-          <h1>All your listings in one cute place</h1>
+          <h1>All your listings in one place</h1>
           <p>Quickly edit, delete, and manage every home you host.</p>
         </div>
         <button className="my-listings-add-btn" type="button" onClick={() => navigate('/dashboard/add-listing')}>
@@ -124,38 +151,26 @@ export function MyListingsPage() {
       </header>
 
       <section className="my-listings-stats">
-        <article className="my-listings-stat-card">
-          <span>Total Listings</span>
-          <strong>{stats.total}</strong>
-        </article>
-        <article className="my-listings-stat-card">
-          <span>Apartments</span>
-          <strong>{stats.apartments}</strong>
-        </article>
-        <article className="my-listings-stat-card">
-          <span>Houses</span>
-          <strong>{stats.houses}</strong>
-        </article>
-        <article className="my-listings-stat-card">
-          <span>Villas</span>
-          <strong>{stats.villas}</strong>
-        </article>
+        {[['Total Listings', stats.total], ['Apartments', stats.apartments], ['Houses', stats.houses], ['Villas', stats.villas]].map(([label, val]) => (
+          <article key={label} className="my-listings-stat-card">
+            <span>{label}</span>
+            <strong>{val}</strong>
+          </article>
+        ))}
       </section>
 
-      {loading ? <div className="my-listings-state">Loading listings...</div> : null}
-      {error ? <div className="my-listings-state my-listings-state--error">{error}</div> : null}
+      {loading && <div className="my-listings-state">Loading listings...</div>}
+      {error && <div className="my-listings-state my-listings-state--error">{error}</div>}
 
-      {!loading && !error && listings.length === 0 ? (
+      {!loading && !error && listings.length === 0 && (
         <div className="my-listings-empty">
           <h2>No listings yet</h2>
           <p>Add your first property and start hosting.</p>
-          <button type="button" onClick={() => navigate('/dashboard/add-listing')}>
-            Add Listing
-          </button>
+          <button type="button" onClick={() => navigate('/dashboard/add-listing')}>Add Listing</button>
         </div>
-      ) : null}
+      )}
 
-      {!loading && !error && listings.length > 0 ? (
+      {!loading && listings.length > 0 && (
         <section className="my-listings-grid">
           {listings.map((listing) => (
             <article key={listing.id} className="listing-card-cute">
@@ -166,18 +181,18 @@ export function MyListingsPage() {
                   className="listing-card-cute__image"
                 />
                 <span className="listing-card-cute__badge">{listing.type || 'Home'}</span>
+                {listing.photos && listing.photos.length > 1 && (
+                  <span className="listing-card-cute__photo-count">{listing.photos.length} photos</span>
+                )}
               </div>
-
               <div className="listing-card-cute__content">
                 <h3>{listing.title || 'Untitled Listing'}</h3>
                 <p className="listing-card-cute__description">{listing.description || 'No description provided.'}</p>
-
                 <div className="listing-card-cute__meta">
-                  <span><FiMapPin /> {listing.location || 'Unknown location'}</span>
+                  <span><FiMapPin /> {listing.location || 'Unknown'}</span>
                   <span><FiHome /> {listing.guests || 1} guests</span>
                   <span><FiDollarSign /> ${listing.pricePerNight || 0}/night</span>
                 </div>
-
                 <div className="listing-card-cute__actions">
                   <button type="button" className="listing-card-cute__btn listing-card-cute__btn--edit" onClick={() => openEditor(listing)}>
                     <FiEdit3 /> Edit
@@ -190,56 +205,111 @@ export function MyListingsPage() {
             </article>
           ))}
         </section>
-      ) : null}
+      )}
 
-      {editingListingId ? (
-        <section className="my-listings-editor">
-          <div className="my-listings-editor__header">
-            <h2>Edit Listing</h2>
-            <button type="button" className="my-listings-editor__close" onClick={() => setEditingListingId(null)}>
-              Close
-            </button>
-          </div>
+      {/* Edit Modal */}
+      {editingListing && (
+        <div className="mle-overlay" onClick={() => setEditingListing(null)}>
+          <div className="mle-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mle-modal__header">
+              <h2>Edit Listing</h2>
+              <button type="button" className="mle-modal__close" onClick={() => setEditingListing(null)}><FiX /></button>
+            </div>
 
-          <div className="my-listings-editor__grid">
-            <label>
-              <span>Title</span>
-              <input value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} />
-            </label>
-            <label>
-              <span>Location</span>
-              <input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
-            </label>
-            <label>
-              <span>Price per night</span>
-              <input value={form.pricePerNight} onChange={(e) => setForm((prev) => ({ ...prev, pricePerNight: e.target.value }))} />
-            </label>
-            <label>
-              <span>Guests</span>
-              <input value={form.guests} onChange={(e) => setForm((prev) => ({ ...prev, guests: e.target.value }))} />
-            </label>
-            <label>
-              <span>Type</span>
-              <select value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}>
-                <option value="APARTMENT">APARTMENT</option>
-                <option value="HOUSE">HOUSE</option>
-                <option value="VILLA">VILLA</option>
-                <option value="CABIN">CABIN</option>
-              </select>
-            </label>
-            <label className="my-listings-editor__full">
-              <span>Description</span>
-              <textarea rows={5} value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
-            </label>
-          </div>
+            <div className="mle-modal__body">
+              {/* Form fields */}
+              <div className="mle-grid">
+                <label className="mle-field">
+                  <span>Title</span>
+                  <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
+                </label>
+                <label className="mle-field">
+                  <span>Type</span>
+                  <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="HOUSE">House</option>
+                    <option value="VILLA">Villa</option>
+                    <option value="CABIN">Cabin</option>
+                  </select>
+                </label>
+                <label className="mle-field">
+                  <span>Location</span>
+                  <input value={form.location} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))} />
+                </label>
+                <label className="mle-field">
+                  <span>Price / night ($)</span>
+                  <input type="number" value={form.pricePerNight} onChange={(e) => setForm((p) => ({ ...p, pricePerNight: e.target.value }))} />
+                </label>
+                <label className="mle-field">
+                  <span>Max Guests</span>
+                  <input type="number" value={form.guests} onChange={(e) => setForm((p) => ({ ...p, guests: e.target.value }))} />
+                </label>
+                <label className="mle-field mle-field--full">
+                  <span>Description</span>
+                  <textarea rows={4} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                </label>
+              </div>
 
-          <div className="my-listings-editor__actions">
-            <button type="button" className="my-listings-editor__save" onClick={handleSave}>
-              Save Changes
-            </button>
+              {/* Photos section */}
+              <div className="mle-photos">
+                <div className="mle-photos__header">
+                  <p className="mle-photos__label">Photos <span>({totalPhotoSlots}/5)</span></p>
+                  {totalPhotoSlots < 5 && (
+                    <button type="button" className="mle-photos__add-btn" onClick={() => fileInputRef.current?.click()}>
+                      <FiUploadCloud /> Add Photos
+                    </button>
+                  )}
+                  <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+                </div>
+
+                <div className="mle-photos__grid">
+                  {/* Existing photos */}
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="mle-photo-item">
+                      <img src={photo.url} alt="Listing photo" />
+                      <button
+                        type="button"
+                        className="mle-photo-item__delete"
+                        onClick={() => handleDeletePhoto(photo.id)}
+                        disabled={deletingPhotoId === photo.id}
+                        aria-label="Delete photo"
+                      >
+                        {deletingPhotoId === photo.id ? '...' : <FiTrash2 />}
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* New photo previews */}
+                  {newPreviews.map((src, i) => (
+                    <div key={`new-${i}`} className="mle-photo-item mle-photo-item--new">
+                      <img src={src} alt={`New photo ${i + 1}`} />
+                      <button type="button" className="mle-photo-item__delete" onClick={() => removeNewFile(i)} aria-label="Remove photo">
+                        <FiX />
+                      </button>
+                      <span className="mle-photo-item__new-badge">New</span>
+                    </div>
+                  ))}
+
+                  {/* Empty slot prompt */}
+                  {totalPhotoSlots === 0 && (
+                    <div className="mle-photos__empty" onClick={() => fileInputRef.current?.click()}>
+                      <FiUploadCloud />
+                      <span>Click to add photos</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mle-modal__footer">
+              <button type="button" className="mle-btn mle-btn--cancel" onClick={() => setEditingListing(null)}>Cancel</button>
+              <button type="button" className="mle-btn mle-btn--save" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
-        </section>
-      ) : null}
+        </div>
+      )}
     </div>
   );
 }

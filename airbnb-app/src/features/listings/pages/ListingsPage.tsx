@@ -28,12 +28,15 @@ export default function ListingsPage() {
   return (
     <section className="listing-page" aria-label="Listings page">
       <div className="listing-page__hero">
-        <div>
+        <div className="listing-page__hero-text">
           <p className="listing-page__eyebrow">Airbnb-style stays</p>
           <h1 className="listing-page__title">Find your next place to stay</h1>
           <p className="listing-page__subtitle">
             Search from a handpicked set of apartments and hotels, then save the ones you like.
           </p>
+        </div>
+        <div className="listing-page__hero-search">
+          <SearchBar />
         </div>
         <label className="listing-page__filter">
           <input type="checkbox" checked={savedOnly} onChange={(e) => setSavedOnly(e.target.checked)} />
@@ -42,7 +45,6 @@ export default function ListingsPage() {
       </div>
 
       <div className="listing-page__toolbar">
-        <SearchBar />
         <p className="listing-page__count">
           {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
         </p>

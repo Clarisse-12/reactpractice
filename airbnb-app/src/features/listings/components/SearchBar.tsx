@@ -25,18 +25,13 @@ export function SearchBar() {
 
   return (
     <div className="search-bar" role="search" aria-label="Search listings">
-      <div className="search-bar__copy">
-        <span className="search-bar__eyebrow">Find your stay</span>
-        <h2 className="search-bar__title">Search apartments, hotels, and unique homes</h2>
-      </div>
-
       <label className="search-bar__field">
         <FiSearch className="search-bar__icon" aria-hidden="true" />
         <input
           ref={inputRef}
           className="search-bar__input"
           type="text"
-          placeholder="Search by title, location, or keyword"
+          placeholder="Search by title or location..."
           value={state.filter}
           onChange={(event) => handleChange(event.target.value)}
         />
@@ -45,10 +40,15 @@ export function SearchBar() {
             type="button"
             className="search-bar__clear"
             onClick={() => dispatch({ type: 'SET_FILTER', payload: '' })}
+            aria-label="Clear search"
           >
-            Clear
+            ✕
           </button>
         ) : null}
+        <button type="button" className="search-bar__btn" aria-label="Search">
+          <FiSearch />
+          <span>Search</span>
+        </button>
       </label>
     </div>
   )

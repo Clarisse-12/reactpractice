@@ -406,6 +406,43 @@
   }
 }
 
+html.dark .signup-page {
+  background: var(--surface-soft);
+}
+
+html.dark .signup-heading,
+html.dark .signup-form-group label,
+html.dark .signup-illustration h3 {
+  color: var(--app-text);
+}
+
+html.dark .signup-intro,
+html.dark .signup-terms label,
+html.dark .signup-login-link,
+html.dark .signup-illustration p,
+html.dark .signup-privacy,
+html.dark .signup-divider {
+  color: var(--text-muted);
+}
+
+html.dark .signup-divider::before,
+html.dark .signup-divider::after {
+  background: var(--surface-border);
+}
+
+html.dark .signup-social-btn,
+html.dark .signup-form-group input,
+html.dark .signup-form-group select,
+html.dark .signup-form-group textarea {
+  background: var(--surface-bg);
+  color: var(--app-text);
+  border-color: var(--surface-border);
+}
+
+html.dark .signup-social-btn:hover {
+  background: var(--surface-muted);
+}
+
 .site-footer__col h4 {
   font-size: 16px;
   font-weight: 700;

@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { FaStar, FaArrowLeft, FaHeart, FaRegHeart } from 'react-icons/fa'
-import numeral from 'numeral'
-import { listings } from '../../../data/listings'
-import { useStore } from '../../../store/StoreContext'
+import { useState, useEffect } from 'react'
+import { FaStar, FaArrowLeft, FaHeart, FaRegHeart, FaMapMarkerAlt, FaUser } from 'react-icons/fa'
+import { getListingById, createBooking } from '../../../services/api'
 import { useFavorites } from '../hooks/useFavorites'
+import { useStore } from '../../../store/StoreContext'
+import { Spinner } from '../../../shared/components/Spinner'
 import './ListingDetail.css'
 
 export default function ListingDetail() {
@@ -13,18 +13,29 @@ export default function ListingDetail() {
   const { state } = useStore()
   const { toggle } = useFavorites()
 
-  const listing = listings.find((l) => l.id === Number(id))
+  const [listing, setListing] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    comment: '',
-  })
+  const [bookingForm, setBookingForm] = useState({ checkin: '', checkout: '' })
+  const [bookingError, setBookingError] = useState('')
+  const [bookingLoading, setBookingLoading] = useState(false)
+  const [bookingSuccess, setBookingSuccess] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    getListingById(id)
+      .then(setListing)
+      .catch(() => setListing(null))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) return <Spinner />
 
   if (!listing) {
     return (
       <div className="listing-detail">
-        <button onClick={() => navigate('/listings')} className="listing-detail__back">
+        <button onClick={() => navigate('/listings')} className="listing-detail__back-btn">
           <FaArrowLeft /> Back to Listings
         </button>
         <div className="listing-detail__not-found">
@@ -34,43 +45,55 @@ export default function ListingDetail() {
     )
   }
 
+  const photos: { url: string; optimizedUrl?: string }[] = listing.photos || []
+  const images = photos.map((p) => p.optimizedUrl || p.url)
+  const mainImage = images[selectedImage] || 'https://via.placeholder.com/900x500?text=No+Image'
   const isSaved = state.saved.includes(listing.id)
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleBook = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    setFormData({ name: '', email: '', comment: '' })
+    setBookingError('')
+    setBookingLoading(true)
+    try {
+      await createBooking({ listingId: listing.id, checkIn: bookingForm.checkin, checkOut: bookingForm.checkout })
+      setBookingSuccess(true)
+      setBookingForm({ checkin: '', checkout: '' })
+    } catch (err: any) {
+      setBookingError(err?.message || 'Failed to create booking')
+    } finally {
+      setBookingLoading(false)
+    }
   }
 
   return (
     <div className="listing-detail">
-      {/* Header */}
       <div className="listing-detail__header">
         <button onClick={() => navigate('/listings')} className="listing-detail__back-btn">
           <FaArrowLeft />
         </button>
-
         <div className="listing-detail__header-content">
           <h1 className="listing-detail__title">{listing.title}</h1>
           <div className="listing-detail__meta">
-            <span className="listing-detail__rating">
-              <FaStar /> {numeral(listing.rating).format('0.00')}
+            {listing.rating && (
+              <span className="listing-detail__rating">
+                <FaStar /> {Number(listing.rating).toFixed(2)}
+              </span>
+            )}
+            <span className="listing-detail__location">
+              <FaMapMarkerAlt /> {listing.location}
             </span>
-            <span className="listing-detail__reviews">({numeral(listing.reviews).format('0,0')} reviews)</span>
-            <span className="listing-detail__location">{listing.location}</span>
-            <span className="listing-detail__type">Full time</span>
+            {listing.type && <span className="listing-detail__type">{listing.type}</span>}
+            {listing.guests && <span className="listing-detail__type">Up to {listing.guests} guests</span>}
           </div>
-          <p className="listing-detail__posted">Posted 7 hours ago</p>
+          {listing.host?.name && (
+            <p className="listing-detail__posted">
+              <FaUser /> Hosted by {listing.host.name}
+            </p>
+          )}
         </div>
-
         <button
           className={`listing-detail__save-btn ${isSaved ? 'active' : ''}`}
-          onClick={() => toggle(listing.id)}
+          onClick={() => toggle(listing.id, listing.title)}
           aria-label={isSaved ? 'Unsave listing' : 'Save listing'}
         >
           {isSaved ? <FaHeart /> : <FaRegHeart />}
@@ -78,196 +101,124 @@ export default function ListingDetail() {
         </button>
       </div>
 
-      {/* Image Gallery */}
+      {/* Gallery */}
       <div className="listing-detail__gallery">
         <div className="listing-detail__main-image">
-          <img src={listing.images[selectedImage]} alt={`${listing.title} - Image ${selectedImage + 1}`} />
+          <img src={mainImage} alt={listing.title} />
         </div>
-        <div className="listing-detail__thumbnails">
-          {listing.images.map((img, index) => (
-            <button
-              key={index}
-              className={`listing-detail__thumbnail ${selectedImage === index ? 'active' : ''}`}
-              onClick={() => setSelectedImage(index)}
-              aria-label={`View image ${index + 1}`}
-            >
-              <img src={img} alt={`Thumbnail ${index + 1}`} />
-            </button>
-          ))}
-        </div>
+        {images.length > 1 && (
+          <div className="listing-detail__thumbnails">
+            {images.map((img: string, index: number) => (
+              <button
+                key={index}
+                className={`listing-detail__thumbnail ${selectedImage === index ? 'active' : ''}`}
+                onClick={() => setSelectedImage(index)}
+                aria-label={`View image ${index + 1}`}
+              >
+                <img src={img} alt={`Thumbnail ${index + 1}`} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       <div className="listing-detail__content">
-        {/* Left Column */}
         <div className="listing-detail__left">
-          {/* Description Section */}
-          <section className="listing-detail__section">
-            <h2 className="listing-detail__section-title">
-              Latest Property <span className="highlight">Reviews</span>
-            </h2>
-            <p className="listing-detail__description">{listing.description}</p>
-          </section>
+          {listing.description && (
+            <section className="listing-detail__section">
+              <h2 className="listing-detail__section-title">
+                About this <span className="highlight">Place</span>
+              </h2>
+              <p className="listing-detail__description">{listing.description}</p>
+            </section>
+          )}
 
-          {/* Amenities Section */}
-          <section className="listing-detail__section">
-            <h2 className="listing-detail__section-title">
-              Amenities <span className="highlight">Available</span>
-            </h2>
-            <div className="listing-detail__amenities">
-              {listing.amenities.map((amenity, index) => (
-                <div key={index} className="listing-detail__amenity">
-                  <span className="listing-detail__amenity-icon">✓</span>
-                  <span className="listing-detail__amenity-text">{amenity}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Pricing Section */}
-          <section className="listing-detail__section">
-            <h2 className="listing-detail__section-title">Pricing</h2>
-            <div className="listing-detail__menu">
-              {listing.menu.map((item, index) => (
-                <div key={index} className="listing-detail__menu-item">
-                  <div className="listing-detail__menu-header">
-                    <h4 className="listing-detail__menu-name">{item.name}</h4>
-                    {item.tag && <span className="listing-detail__menu-tag">{item.tag}</span>}
+          {listing.amenities?.length > 0 && (
+            <section className="listing-detail__section">
+              <h2 className="listing-detail__section-title">
+                Amenities <span className="highlight">Available</span>
+              </h2>
+              <div className="listing-detail__amenities">
+                {listing.amenities.map((amenity: string, index: number) => (
+                  <div key={index} className="listing-detail__amenity">
+                    <span className="listing-detail__amenity-icon">✓</span>
+                    <span className="listing-detail__amenity-text">{amenity}</span>
                   </div>
-                  <p className="listing-detail__menu-desc">{item.description}</p>
-                  <span className="listing-detail__menu-price">${item.price}</span>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          )}
 
-          {/* Comments Section */}
-          <section className="listing-detail__section">
-            <h2 className="listing-detail__section-title">
-              Leave a <span className="highlight">Comment</span>
-            </h2>
-            <form className="listing-detail__form" onSubmit={handleSubmit}>
-              <div className="listing-detail__form-row">
-                <div className="listing-detail__form-group">
-                  <label htmlFor="name">Full Name *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter your name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-                <div className="listing-detail__form-group">
-                  <label htmlFor="email">Email Address *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email address"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="listing-detail__form-group">
-                <label htmlFor="comment">Comment *</label>
-                <textarea
-                  id="comment"
-                  name="comment"
-                  placeholder="Tell us what we can help you with!"
-                  value={formData.comment}
-                  onChange={handleFormChange}
-                  rows={5}
-                  required
-                />
-              </div>
-              <button type="submit" className="listing-detail__submit-btn">
-                Submit
-              </button>
-            </form>
-          </section>
-        </div>
-
-        {/* Right Column */}
-        <aside className="listing-detail__right">
-          {/* Booking Widget */}
-          <div className="listing-detail__booking">
-            <h3>Book a table <span className="highlight">online</span></h3>
-            <form className="listing-detail__booking-form">
-              <div className="listing-detail__form-group">
-                <label htmlFor="booking-name">Full Name *</label>
-                <input
-                  type="text"
-                  id="booking-name"
-                  placeholder="Enter your name"
-                  required
-                />
-              </div>
-              <div className="listing-detail__form-group">
-                <label htmlFor="booking-email">Email Address *</label>
-                <input
-                  type="email"
-                  id="booking-email"
-                  placeholder="Enter your email address"
-                  required
-                />
-              </div>
-              <div className="listing-detail__form-group">
-                <label htmlFor="booking-comment">Comment *</label>
-                <textarea
-                  id="booking-comment"
-                  placeholder="Tell us what we can help you with!"
-                  rows={4}
-                  required
-                />
-              </div>
-              <button type="submit" className="listing-detail__book-btn">
-                Book Now
-              </button>
-            </form>
-          </div>
-
-          {/* Opening Hours */}
-          <div className="listing-detail__hours">
-            <h3>
-              Opening <span className="highlight">Hours</span>
-            </h3>
-            <div className="listing-detail__hours-list">
-              {Object.entries(listing.openingHours).map(([day, hours]) => (
-                <div key={day} className="listing-detail__hours-item">
-                  <span className="listing-detail__day">{day}</span>
-                  <span className={`listing-detail__time ${hours === 'Close' ? 'closed' : ''}`}>{hours}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Reviews */}
-          {listing.reviews_list.length > 0 && (
-            <div className="listing-detail__reviews">
-              <h3>Recent Reviews</h3>
-              {listing.reviews_list.map((review) => (
+          {listing.reviews?.length > 0 && (
+            <section className="listing-detail__section">
+              <h2 className="listing-detail__section-title">
+                Guest <span className="highlight">Reviews</span>
+              </h2>
+              {listing.reviews.map((review: any) => (
                 <div key={review.id} className="listing-detail__review-item">
                   <div className="listing-detail__review-header">
-                    <h4>{review.author}</h4>
+                    <h4>{review.user?.name || 'Guest'}</h4>
                     <span className="listing-detail__review-rating">
                       <FaStar /> {review.rating}
                     </span>
                   </div>
-                  <p className="listing-detail__review-text">{review.text}</p>
-                  <p className="listing-detail__review-date">{review.date}</p>
+                  <p className="listing-detail__review-text">{review.comment}</p>
+                  <p className="listing-detail__review-date">
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               ))}
-            </div>
+            </section>
           )}
+        </div>
 
-          {/* People Saved */}
+        <aside className="listing-detail__right">
+          <div className="listing-detail__booking">
+            <h3>
+              Book this <span className="highlight">Place</span>
+            </h3>
+            <p className="listing-detail__price">
+              <strong>${listing.pricePerNight}</strong> / night
+            </p>
+            {bookingSuccess ? (
+              <div className="listing-detail__booking-success">
+                ✓ Booking submitted! Check your dashboard for details.
+              </div>
+            ) : (
+              <form className="listing-detail__booking-form" onSubmit={handleBook}>
+                <div className="listing-detail__form-group">
+                  <label htmlFor="booking-checkin">Check-in Date *</label>
+                  <input
+                    type="date"
+                    id="booking-checkin"
+                    value={bookingForm.checkin}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setBookingForm((prev) => ({ ...prev, checkin: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="listing-detail__form-group">
+                  <label htmlFor="booking-checkout">Check-out Date *</label>
+                  <input
+                    type="date"
+                    id="booking-checkout"
+                    value={bookingForm.checkout}
+                    min={bookingForm.checkin || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setBookingForm((prev) => ({ ...prev, checkout: e.target.value }))}
+                    required
+                  />
+                </div>
+                {bookingError && <p className="listing-detail__booking-error">{bookingError}</p>}
+                <button type="submit" className="listing-detail__book-btn" disabled={bookingLoading}>
+                  {bookingLoading ? 'Booking...' : 'Book Now'}
+                </button>
+              </form>
+            )}
+          </div>
+
           <div className="listing-detail__saved-count">
-            <FaHeart /> 46 people bookmarked this place
+            <FaHeart /> Save this listing to your favorites
           </div>
         </aside>
       </div>

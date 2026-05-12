@@ -566,6 +566,32 @@
   font-size: 20px;
 }
 
+.listing-detail__booking-success {
+  background: #f0fff4;
+  border: 1px solid #68d391;
+  color: #276749;
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.listing-detail__booking-error {
+  color: #e53e3e;
+  font-size: 13px;
+  margin: 0;
+}
+
+.listing-detail__price {
+  font-size: 22px;
+  color: #222;
+  margin: 0 0 16px 0;
+}
+
+.listing-detail__price strong {
+  color: #ff6b6b;
+}
+
 /* Not Found */
 .listing-detail__not-found {
   min-height: 400px;

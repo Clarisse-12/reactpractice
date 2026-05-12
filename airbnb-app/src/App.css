@@ -1,6 +1,7 @@
 .app-shell {
   min-height: 100vh;
-  background: #ffffff;
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 .app-content {
@@ -16,9 +17,9 @@
 }
 
 .normal{
-    color: black;
+  color: var(--app-text);
 
 }
 .active{
-    color: red;
+  color: var(--accent);
 }

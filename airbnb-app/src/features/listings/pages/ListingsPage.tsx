@@ -15,7 +15,6 @@ export default function ListingsPage() {
 
   const filteredListings = useMemo(() => {
     const normalizedFilter = state.filter.trim().toLowerCase()
-
     return state.listings
       .filter((listing) => {
         if (!normalizedFilter) return true
@@ -24,9 +23,7 @@ export default function ListingsPage() {
       .filter((listing) => !savedOnly || state.saved.includes(listing.id))
   }, [state.filter, state.listings, savedOnly, state.saved])
 
-  if (state.loading) {
-    return <Spinner />
-  }
+  if (state.loading) return <Spinner />
 
   return (
     <section className="listing-page" aria-label="Listings page">
@@ -38,13 +35,8 @@ export default function ListingsPage() {
             Search from a handpicked set of apartments and hotels, then save the ones you like.
           </p>
         </div>
-
         <label className="listing-page__filter">
-          <input
-            type="checkbox"
-            checked={savedOnly}
-            onChange={(event) => setSavedOnly(event.target.checked)}
-          />
+          <input type="checkbox" checked={savedOnly} onChange={(e) => setSavedOnly(e.target.checked)} />
           Saved only
         </label>
       </div>

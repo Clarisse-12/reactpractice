@@ -1,16 +1,15 @@
 import clsx from 'clsx'
-import { format } from 'date-fns'
 import numeral from 'numeral'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { FaHeart, FaRegHeart, FaStar, FaMapMarkerAlt } from 'react-icons/fa'
-import type { Listing } from '../types'
+import type { ApiListing } from '../../../store/types'
 import styles from './ListingCard.module.css'
 
 interface ListingCardProps {
-  listing: Listing
+  listing: ApiListing
   saved: boolean
-  onToggleSave: (id: number) => void
+  onToggleSave: (id: string) => void
 }
 
 export function ListingCard({ listing, saved, onToggleSave }: ListingCardProps) {
@@ -19,6 +18,9 @@ export function ListingCard({ listing, saved, onToggleSave }: ListingCardProps) 
     e.stopPropagation()
     onToggleSave(listing.id)
   }
+
+  const imgUrl = listing.photos?.[0]?.optimizedUrl || listing.photos?.[0]?.url || 'https://via.placeholder.com/400'
+  const price = listing.pricePerNight || 0
 
   return (
     <Link to={`/listings/${listing.id}`} style={{ textDecoration: 'none' }}>
@@ -29,11 +31,8 @@ export function ListingCard({ listing, saved, onToggleSave }: ListingCardProps) 
         transition={{ duration: 0.3 }}
       >
         <div className={styles.media}>
-          <img className={styles.image} src={listing.img} alt={listing.title} />
-
-          {listing.superhost && <span className={styles.badge}>Superhost</span>}
-          {listing.price > 300 && <span className={styles.luxury}>Luxury</span>}
-
+          <img className={styles.image} src={imgUrl} alt={listing.title} />
+          {price > 300 && <span className={styles.luxury}>Luxury</span>}
           <button
             type="button"
             className={clsx(styles.save, { [styles.saveActive]: saved })}
@@ -47,9 +46,11 @@ export function ListingCard({ listing, saved, onToggleSave }: ListingCardProps) 
         <div className={styles.content}>
           <div className={styles.titleRow}>
             <h3 className={styles.title}>{listing.title}</h3>
-            <span className={styles.rating}>
-              <FaStar aria-hidden="true" /> {numeral(listing.rating).format('0.00')}
-            </span>
+            {listing.rating && (
+              <span className={styles.rating}>
+                <FaStar aria-hidden="true" /> {numeral(listing.rating).format('0.00')}
+              </span>
+            )}
           </div>
 
           <p className={styles.location}>
@@ -57,11 +58,7 @@ export function ListingCard({ listing, saved, onToggleSave }: ListingCardProps) 
           </p>
 
           <p className={styles.meta}>
-            <strong>{numeral(listing.price).format('$0')}</strong> / night
-          </p>
-
-          <p className={clsx(styles.availability, { [styles.availabilityBooked]: !listing.available })}>
-            {listing.available ? `Available from ${format(new Date(listing.availableFrom), 'MMM dd, yyyy')}` : 'Booked'}
+            <strong>{numeral(price).format('$0')}</strong> / night
           </p>
         </div>
       </motion.article>

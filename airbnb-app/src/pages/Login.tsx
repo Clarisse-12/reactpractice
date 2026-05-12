@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Signup.css'
 import './Login.css'
+import { login, auth } from '../services/api'
+import { useStore } from '../store/StoreContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { dispatch } = useStore()
   const [form, setForm] = useState({ email: '', password: '', remember: false })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -14,8 +17,18 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Login submitted', form)
-    navigate('/listings')
+    login({ email: form.email, password: form.password })
+      .then((res) => {
+        if (res.token) auth.saveToken(res.token)
+        if (res.user) {
+          dispatch({ type: 'SET_USER', payload: res.user })
+          const role = String(res.user.role || 'guest').toLowerCase()
+          navigate(role === 'guest' ? '/dashboard' : '/dashboard')
+        } else {
+          navigate('/dashboard')
+        }
+      })
+      .catch((err) => alert(err?.message || 'Login failed'))
   }
 
   return (

@@ -1,10 +1,14 @@
 .login-page {
   min-height: 100vh;
-  background: #f7f7f7;
+  background: var(--surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
+}
+
+html.dark .login-page {
+  background: var(--surface-soft);
 }
 
 .login-container {

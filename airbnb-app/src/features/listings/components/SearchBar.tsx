@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { debounce } from 'lodash'
+import { FiSearch } from 'react-icons/fi'
 import { useStore } from '../../../store/StoreContext'
 
 export function SearchBar() {
@@ -23,16 +24,32 @@ export function SearchBar() {
   }, [handleChange])
 
   return (
-    <label className="search-bar">
-      <span className="search-bar__label">Search</span>
-      <input
-        ref={inputRef}
-        className="search-bar__input"
-        type="text"
-        placeholder="Search by title or location"
-        value={state.filter}
-        onChange={(event) => handleChange(event.target.value)}
-      />
-    </label>
+    <div className="search-bar" role="search" aria-label="Search listings">
+      <div className="search-bar__copy">
+        <span className="search-bar__eyebrow">Find your stay</span>
+        <h2 className="search-bar__title">Search apartments, hotels, and unique homes</h2>
+      </div>
+
+      <label className="search-bar__field">
+        <FiSearch className="search-bar__icon" aria-hidden="true" />
+        <input
+          ref={inputRef}
+          className="search-bar__input"
+          type="text"
+          placeholder="Search by title, location, or keyword"
+          value={state.filter}
+          onChange={(event) => handleChange(event.target.value)}
+        />
+        {state.filter ? (
+          <button
+            type="button"
+            className="search-bar__clear"
+            onClick={() => dispatch({ type: 'SET_FILTER', payload: '' })}
+          >
+            Clear
+          </button>
+        ) : null}
+      </label>
+    </div>
   )
 }

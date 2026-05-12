@@ -40,12 +40,13 @@ const isRole = (value: unknown): value is Role => value === Role.HOST || value =
 
 export const register = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, username, phone, password } = req.body as {
+    const { name, email, username, phone, password, role } = req.body as {
       name?: string;
       email?: string;
       username?: string;
       phone?: string;
       password?: string;
+      role?: string;
     };
 
     if (!name || !email || !username || !phone || !password) {
@@ -58,6 +59,12 @@ export const register = async (req: AuthRequest, res: Response, next: NextFuncti
       return;
     }
 
+    const normalizedRole = typeof role === "string" ? role.toUpperCase() : undefined;
+    if (normalizedRole !== undefined && !isRole(normalizedRole)) {
+      res.status(400).json({ message: "Invalid role. Allowed roles: guest, host" });
+      return;
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       res.status(409).json({ message: "Email already exists" });
@@ -66,7 +73,8 @@ export const register = async (req: AuthRequest, res: Response, next: NextFuncti
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Public signup must always create a GUEST user. Admin/Host accounts are created manually.
+    const roleToCreate = (normalizedRole as Role | undefined) ?? Role.GUEST;
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -74,14 +82,14 @@ export const register = async (req: AuthRequest, res: Response, next: NextFuncti
         username,
         phone,
         password: hashedPassword,
-        role: Role.GUEST
+        role: roleToCreate
       }
     });
 
 
     res.status(201).json(sanitizeUser(user));
 
-    void sendEmail(email, "Welcome to Airbnb!", welcomeEmail(name, Role.GUEST)).catch((emailError) => {
+    void sendEmail(email, "Welcome to Airbnb!", welcomeEmail(name, roleToCreate)).catch((emailError) => {
       console.warn("Welcome email failed", {
         operation: "register",
         message: emailError instanceof Error ? emailError.message : emailError

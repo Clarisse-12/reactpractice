@@ -1,4 +1,3 @@
-import React from 'react'
 import { FiPhone, FiMail } from 'react-icons/fi'
 import './Footer.css'
 

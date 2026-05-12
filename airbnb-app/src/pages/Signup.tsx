@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import {  } from 'react-icons/fi'
 import { Link, useNavigate } from 'react-router-dom'
 import './Signup.css'
+import { register } from '../services/api'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -10,22 +10,44 @@ export default function Signup() {
     email: '',
     password: '',
     confirmPassword: '',
+    username: '',
+    phone: '',
+    role: 'guest',
     agreeToTerms: false,
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    const target = e.target as HTMLInputElement
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: target.type === 'checkbox' ? target.checked : value,
     }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Signup submitted:', formData)
-    // You can add signup logic here
-    navigate('/listings')
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match')
+      return
+    }
+
+    const payload = {
+      name: formData.fullName,
+      email: formData.email,
+      username: formData.username || formData.email.split('@')[0],
+      phone: formData.phone || '',
+      role: formData.role || 'guest',
+      password: formData.password,
+    }
+
+    register(payload)
+      .then(() => {
+        navigate('/login')
+      })
+      .catch((err) => {
+        alert(err?.message || 'Signup failed')
+      })
   }
 
   return (
@@ -73,6 +95,24 @@ export default function Signup() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="signup-form-group">
+              <label htmlFor="username">Username *</label>
+              <input id="username" name="username" value={formData.username} onChange={handleChange} placeholder="Username" required />
+            </div>
+
+            <div className="signup-form-group">
+              <label htmlFor="phone">Phone *</label>
+              <input id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone number" required />
+            </div>
+
+            <div className="signup-form-group">
+              <label htmlFor="role">Role *</label>
+              <select id="role" name="role" value={formData.role} onChange={handleChange}>
+                <option value="guest">Guest</option>
+                <option value="host">Host</option>
+              </select>
             </div>
 
             <div className="signup-form-group">

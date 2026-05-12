@@ -5,6 +5,8 @@ export const initialState: State = {
   loading: false,
   filter: '',
   saved: [],
+  user: null,
+  darkMode: false,
 }
 
 export function storeReducer(state: State, action: Action): State {
@@ -22,6 +24,12 @@ export function storeReducer(state: State, action: Action): State {
           ? state.saved.filter((id) => id !== action.payload)
           : [...state.saved, action.payload],
       }
+    case 'SET_USER':
+      return { ...state, user: action.payload }
+    case 'LOGOUT':
+      return { ...state, user: null }
+    case 'SET_DARKMODE':
+      return { ...state, darkMode: action.payload }
     default:
       return state
   }

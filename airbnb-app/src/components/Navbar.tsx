@@ -1,23 +1,52 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./Navbar.css";
 import { NavLink, Link } from "react-router-dom";
-import { FiHeart, FiPlus, FiX, FiUser } from "react-icons/fi";
+import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon } from "react-icons/fi";
+import { auth } from '../services/api'
 import { Transition } from "@headlessui/react";
 import numeral from "numeral";
 import { useStore } from "../store/StoreContext";
 import { useFavorites } from "../features/listings/hooks/useFavorites";
 
-const navItems = [
-    {to: "/", label: "Home"},
-    {to: "/listings", label: "Listings"}, 
-    {to: "/dashboard", label: "Dashboard" },
-];
-
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const { toggle } = useFavorites();
   const savedListings = state.listings.filter((listing) => state.saved.includes(listing.id));
+  const isDark = !!state.darkMode
+  const role = String(state.user?.role || 'guest').toLowerCase()
+
+  const navItemsToShow = useMemo(() => {
+    if (!state.user) {
+      return [
+        { to: '/', label: 'Home' },
+        { to: '/listings', label: 'Listings' },
+      ]
+    }
+
+    if (role === 'guest') {
+      return [
+        { to: '/', label: 'Home' },
+        { to: '/listings', label: 'Listings' },
+        { to: '/dashboard', label: 'My Bookings' },
+      ]
+    }
+
+    return [
+      { to: '/', label: 'Home' },
+      { to: '/listings', label: 'Listings' },
+      { to: '/dashboard', label: 'Dashboard' },
+    ]
+  }, [state.user, role])
+
+  const userInitial = useMemo(() => {
+    const source = String(state.user?.name || state.user?.username || 'U').trim()
+    return source.charAt(0).toUpperCase() || 'U'
+  }, [state.user?.name, state.user?.username])
+
+  const profileAvatar = state.user?.avatar
+  const profileName = state.user?.name || state.user?.username || 'Profile'
+  const profileEmail = state.user?.email || 'example@gmail.com'
 
   return (
     <header className="navbar">
@@ -27,7 +56,7 @@ export default function Navbar() {
       </div>
 
       <nav className="navbar__menu" aria-label="Primary navigation">
-        {navItems.map((item) => (
+        {navItemsToShow.map((item) => (
             <NavLink 
             key={item.to}
             to={item.to}
@@ -49,13 +78,52 @@ export default function Navbar() {
           <FiHeart className="navbar__icon" />
           <span className="navbar__badge">{state.saved.length}</span>
         </button>
-        <Link to="/signup" className="navbar__profile-button" aria-label="Profile">
-          <FiUser className="navbar__icon" />
-        </Link>
-        <button className="navbar__cta" type="button">
-          <span className="navbar__cta-plus"><FiPlus aria-hidden="true" /></span>
-          Add Listing
+        <button className="navbar__icon-button" type="button" aria-label="Toggle dark mode" onClick={() => {
+          const next = !isDark
+          dispatch({ type: 'SET_DARKMODE', payload: next })
+          localStorage.setItem('dark_mode', next ? '1' : '0')
+          document.documentElement.classList.toggle('dark', next)
+        }}>
+          {isDark ? <FiSun className="navbar__icon" /> : <FiMoon className="navbar__icon" />}
         </button>
+
+        {state.user ? (
+          <div className="navbar__profile-menu">
+            <Link to="/profile" className="navbar__profile-card" aria-label="Profile">
+              <span className="navbar__profile-avatar">
+                {profileAvatar ? <img src={profileAvatar} alt="Profile avatar" /> : <span>{userInitial}</span>}
+              </span>
+              <span className="navbar__profile-copy">
+                <strong>{profileName}</strong>
+                <small>{profileEmail}</small>
+              </span>
+            </Link>
+            <button className="navbar__logout navbar__logout--pill" type="button" onClick={() => {
+              auth.removeToken()
+              dispatch({ type: 'LOGOUT' })
+            }}>
+              Logout
+            </button>
+          </div>
+        ) : (
+          <div className="navbar__profile-menu">
+            <Link to="/login" className="navbar__profile-card navbar__profile-card--guest" aria-label="Sign in">
+              <span className="navbar__profile-avatar navbar__profile-avatar--guest">
+                <FiUser className="navbar__icon" />
+              </span>
+              <span className="navbar__profile-copy">
+                <strong>Create account</strong>
+                <small>explore</small>
+              </span>
+            </Link>
+          </div>
+        )}
+        {role === 'host' ? (
+          <Link className="navbar__cta" to="/dashboard/add-listing">
+            <span className="navbar__cta-plus"><FiPlus aria-hidden="true" /></span>
+            Add Listing
+          </Link>
+        ) : null}
       </div>
 
       <Transition show={isOpen}>
@@ -124,7 +192,7 @@ export default function Navbar() {
           height: 100vh;
           width: 400px;
           max-width: 100%;
-          background: #fff;
+          background: var(--surface-bg);
           box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
           display: flex;
           flex-direction: column;
@@ -136,20 +204,20 @@ export default function Navbar() {
           align-items: center;
           justify-content: space-between;
           padding: 20px;
-          border-bottom: 1px solid #e5e7eb;
+          border-bottom: 1px solid var(--surface-border);
         }
 
         .saved-listings-title {
           margin: 0;
           font-size: 1.25rem;
-          color: #111827;
+          color: var(--app-text);
         }
 
         .saved-listings-close {
           background: none;
           border: none;
           cursor: pointer;
-          color: #6b7280;
+          color: var(--text-muted);
           padding: 4px;
           display: flex;
           align-items: center;
@@ -157,13 +225,13 @@ export default function Navbar() {
         }
 
         .saved-listings-close:hover {
-          color: #111827;
+          color: var(--app-text);
         }
 
         .saved-listings-empty {
           padding: 20px;
           text-align: center;
-          color: #6b7280;
+          color: var(--text-muted);
         }
 
         .saved-listings-list {
@@ -180,7 +248,7 @@ export default function Navbar() {
           justify-content: space-between;
           gap: 16px;
           padding: 16px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--surface-border);
           border-radius: 12px;
         }
 
@@ -192,14 +260,14 @@ export default function Navbar() {
         .saved-listing-title {
           margin: 0 0 4px 0;
           font-size: 0.95rem;
-          color: #111827;
+          color: var(--app-text);
           font-weight: 600;
         }
 
         .saved-listing-location {
           margin: 0 0 4px 0;
           font-size: 0.85rem;
-          color: #6b7280;
+          color: var(--text-muted);
         }
 
         .saved-listing-price {

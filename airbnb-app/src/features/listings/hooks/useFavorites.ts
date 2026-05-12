@@ -4,9 +4,8 @@ import toast from 'react-hot-toast'
 export function useFavorites() {
   const { state, dispatch } = useStore()
 
-  const toggle = (id: number, title: string): void => {
+  const toggle = (id: string, title: string): void => {
     dispatch({ type: 'TOGGLE_FAVORITE', payload: id })
-
     if (state.saved.includes(id)) {
       toast.success(`Removed: ${title}`)
     } else {
@@ -15,7 +14,7 @@ export function useFavorites() {
   }
 
   const count = state.saved.length
-  const isSaved = (id: number): boolean => state.saved.includes(id)
+  const isSaved = (id: string): boolean => state.saved.includes(id)
 
   return { toggle, count, isSaved }
 }

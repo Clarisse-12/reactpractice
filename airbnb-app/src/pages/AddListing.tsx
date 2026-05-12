@@ -90,16 +90,6 @@ export default function AddListing() {
 
   return (
     <section className="add-listing-page" aria-label="Add listing">
-      <aside className="add-listing-sidebar">
-        <div className="add-listing-sidebar__section">
-          <p className="add-listing-sidebar__label">Main Menu</p>
-          <a className="add-listing-sidebar__item" href="/dashboard/overview">Dashboard</a>
-          <a className="add-listing-sidebar__item is-active" href="/dashboard/add-listing">Add listing</a>
-          <a className="add-listing-sidebar__item" href="/dashboard/listings">My Listings</a>
-          <a className="add-listing-sidebar__item" href="/dashboard/bookings">Bookings</a>
-        </div>
-      </aside>
-
       <div className="add-listing-main">
         <form onSubmit={handleSubmit}>
 

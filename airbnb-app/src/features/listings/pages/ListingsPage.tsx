@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useStore } from '../../../store/StoreContext'
 import { useListings } from '../hooks/useListings'
 import { useFavorites } from '../hooks/useFavorites'
@@ -12,13 +12,29 @@ const TYPES = ['APARTMENT', 'HOUSE', 'VILLA', 'CABIN']
 export default function ListingsPage() {
   const { state } = useStore()
   const { toggle } = useFavorites()
-  useListings()
 
   const [savedOnly, setSavedOnly] = useState(false)
   const [selectedType, setSelectedType] = useState('')
   const [location, setLocation] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Debounced values sent to API
+  const [debouncedLocation, setDebouncedLocation] = useState('')
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedLocation(location), 500)
+    return () => clearTimeout(t)
+  }, [location])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedMaxPrice(maxPrice), 500)
+    return () => clearTimeout(t)
+  }, [maxPrice])
+
+  // Pass type, maxPrice, location to API — re-fetches when they change
+  useListings({ type: selectedType, maxPrice: debouncedMaxPrice, location: debouncedLocation })
 
   const activeFilterCount = [savedOnly, !!selectedType, !!location, !!maxPrice].filter(Boolean).length
 
@@ -27,23 +43,20 @@ export default function ListingsPage() {
     setSelectedType('')
     setLocation('')
     setMaxPrice('')
+    setDebouncedLocation('')
+    setDebouncedMaxPrice('')
   }
 
+  // Only savedOnly and search text are filtered on the frontend
   const filteredListings = useMemo(() => {
     const normalizedFilter = state.filter.trim().toLowerCase()
-    const normalizedLocation = location.trim().toLowerCase()
-    const price = maxPrice ? Number(maxPrice) : null
-
     return state.listings
       .filter((l) => {
         if (!normalizedFilter) return true
         return `${l.title} ${l.location}`.toLowerCase().includes(normalizedFilter)
       })
       .filter((l) => !savedOnly || state.saved.includes(l.id))
-      .filter((l) => !selectedType || l.type === selectedType)
-      .filter((l) => !normalizedLocation || l.location.toLowerCase().includes(normalizedLocation))
-      .filter((l) => !price || l.pricePerNight <= price)
-  }, [state.filter, state.listings, savedOnly, state.saved, selectedType, location, maxPrice])
+  }, [state.filter, state.listings, savedOnly, state.saved])
 
   if (state.loading) return <Spinner />
 
@@ -125,16 +138,13 @@ export default function ListingsPage() {
             </button>
           )}
         </div>
-        {maxPrice && (
-          <p className="lp-sidebar__price-hint">Up to ${maxPrice} / night</p>
-        )}
+        {maxPrice && <p className="lp-sidebar__price-hint">Up to ${maxPrice} / night</p>}
       </div>
     </aside>
   )
 
   return (
     <section className="listing-page" aria-label="Listings page">
-      {/* Hero */}
       <div className="listing-page__hero">
         <div className="listing-page__hero-text">
           <p className="listing-page__eyebrow">Airbnb-style stays</p>
@@ -148,9 +158,7 @@ export default function ListingsPage() {
         </div>
       </div>
 
-      {/* Body: sidebar + grid */}
       <div className="listing-page__body">
-
         {/* Mobile filter toggle */}
         <div className="lp-mobile-bar">
           <button

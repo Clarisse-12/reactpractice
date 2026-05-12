@@ -7,6 +7,7 @@ import AddListing from './pages/AddListing'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
+import GuestDashboard from './pages/GuestDashboard'
 import { ListingsPage } from './features/listings'
 import ListingDetail from './features/listings/pages/ListingDetail'
 import {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Navigate to="/dashboard/overview" replace />} />
+          <Route path="/guest/bookings" element={<GuestDashboard />} />
 
           {/* Host Dashboard Routes */}
           <Route

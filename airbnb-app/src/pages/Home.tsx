@@ -1,8 +1,9 @@
 import homeImage from '../assets/home.png'
 import { FiCalendar, FiMapPin, FiHome, FiChevronLeft, FiChevronRight, FiPlus, FiMinus, FiArrowRight, FiUser } from 'react-icons/fi'
-import { listings } from '../data/listings'
 import { useState, useEffect } from 'react'
 import { ListingCard } from '../features/listings'
+import { useStore } from '../store/StoreContext'
+import { useListings } from '../features/listings/hooks/useListings'
 
 const steps = [
   {
@@ -104,7 +105,9 @@ const articleItems = [
 ]
 
 export default function Home() {
-  const items = listings.slice(0, 6)
+  const { state } = useStore()
+  useListings()
+  const items = state.listings.slice(0, 6)
   const getVisible = () => {
     if (typeof window === 'undefined') return 3
     const w = window.innerWidth
@@ -115,7 +118,7 @@ export default function Home() {
 
   const [currentPage, setCurrentPage] = useState(0)
   const [visibleCount, setVisibleCount] = useState(getVisible())
-  const [savedFeatured, setSavedFeatured] = useState<number[]>([])
+  const [savedFeatured, setSavedFeatured] = useState<string[]>([])
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
   const [testimonialIndex, setTestimonialIndex] = useState(0)
   const pagesData = Array.from({ length: Math.max(1, Math.ceil(items.length / visibleCount)) }, (_, i) =>
@@ -144,7 +147,7 @@ export default function Home() {
     setCurrentPage(Math.max(0, Math.min(pages - 1, i)))
   }
 
-  function toggleFeaturedSave(id: number) {
+  function toggleFeaturedSave(id: string) {
     setSavedFeatured((current) =>
       current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id],
     )

@@ -23,9 +23,9 @@ export default function Login() {
         if (res.user) {
           dispatch({ type: 'SET_USER', payload: res.user })
           const role = String(res.user.role || 'guest').toLowerCase()
-          navigate(role === 'guest' ? '/dashboard' : '/dashboard')
+          navigate(role === 'guest' ? '/listings' : '/dashboard/overview')
         } else {
-          navigate('/dashboard')
+          navigate('/listings')
         }
       })
       .catch((err) => alert(err?.message || 'Login failed'))

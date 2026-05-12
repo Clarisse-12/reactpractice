@@ -54,7 +54,7 @@ export function SavedListings() {
                       <div className="saved-listing-info">
                         <h3 className="saved-listing-title">{listing.title}</h3>
                         <p className="saved-listing-location">{listing.location}</p>
-                        <p className="saved-listing-price">{numeral(listing.price).format('$0')} / night</p>
+                        <p className="saved-listing-price">{numeral(listing.pricePerNight).format('$0')} / night</p>
                       </div>
                       <button
                         type="button"

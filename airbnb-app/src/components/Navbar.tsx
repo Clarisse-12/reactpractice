@@ -34,9 +34,8 @@ export default function Navbar() {
     }
 
     return [
-      { to: '/', label: 'Home' },
       { to: '/listings', label: 'Listings' },
-      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/dashboard/overview', label: 'Dashboard' },
     ]
   }, [state.user, role])
 

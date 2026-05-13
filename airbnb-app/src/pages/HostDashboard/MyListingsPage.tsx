@@ -4,7 +4,7 @@ import { FiEdit3, FiPlus, FiTrash2, FiMapPin, FiHome, FiDollarSign, FiUploadClou
 import { deleteListing, deleteListingPhoto, me, updateListing, uploadListingPhotos } from '../../services/api';
 import './MyListingsPage.css';
 
-interface Photo { id: string; url: string; publicId?: string }
+interface Photo { id: string; url: string; publicId?: string; optimizedUrl?: string }
 interface Listing {
   id: string;
   title?: string;
@@ -25,7 +25,7 @@ export function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', location: '', pricePerNight: '', guests: '', type: 'APARTMENT' });
+  const [form, setForm] = useState({ title: '', description: '', location: '', pricePerNight: '', guests: '', type: 'APARTMENT', amenities: '' });
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
@@ -44,6 +44,7 @@ export function MyListingsPage() {
     apartments: listings.filter((l) => String(l.type).toUpperCase() === 'APARTMENT').length,
     villas: listings.filter((l) => String(l.type).toUpperCase() === 'VILLA').length,
     houses: listings.filter((l) => String(l.type).toUpperCase() === 'HOUSE').length,
+    cabins: listings.filter((l) => String(l.type).toUpperCase() === 'CABIN').length,
   }), [listings]);
 
   const openEditor = (listing: Listing) => {
@@ -54,12 +55,15 @@ export function MyListingsPage() {
       location: listing.location || '',
       pricePerNight: String(listing.pricePerNight || ''),
       guests: String(listing.guests || ''),
+      amenities: Array.isArray(listing.photos) ? '' : '',
       type: listing.type || 'APARTMENT',
     });
     setPhotos(listing.photos || []);
     setNewFiles([]);
     setNewPreviews([]);
   };
+
+  const [generating, setGenerating] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -151,7 +155,7 @@ export function MyListingsPage() {
       </header>
 
       <section className="my-listings-stats">
-        {[['Total Listings', stats.total], ['Apartments', stats.apartments], ['Houses', stats.houses], ['Villas', stats.villas]].map(([label, val]) => (
+        {[['Total Listings', stats.total], ['Apartments', stats.apartments], ['Houses', stats.houses], ['Villas', stats.villas], ['Cabins', stats.cabins]].map(([label, val]) => (
           <article key={label} className="my-listings-stat-card">
             <span>{label}</span>
             <strong>{val}</strong>
@@ -176,7 +180,7 @@ export function MyListingsPage() {
             <article key={listing.id} className="listing-card-cute">
               <div className="listing-card-cute__imageWrap">
                 <img
-                  src={listing.photos?.[0]?.url || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'}
+                  src={listing.photos?.[0]?.optimizedUrl || listing.photos?.[0]?.url || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'}
                   alt={listing.title || 'Listing'}
                   className="listing-card-cute__image"
                 />
@@ -244,9 +248,41 @@ export function MyListingsPage() {
                   <span>Max Guests</span>
                   <input type="number" value={form.guests} onChange={(e) => setForm((p) => ({ ...p, guests: e.target.value }))} />
                 </label>
+                <label className="mle-field">
+                  <span>Amenities (comma separated)</span>
+                  <input value={form.amenities} onChange={(e) => setForm((p) => ({ ...p, amenities: e.target.value }))} placeholder="WiFi, Kitchen, Parking" />
+                </label>
                 <label className="mle-field mle-field--full">
                   <span>Description</span>
                   <textarea rows={4} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="mle-btn mle-btn--secondary"
+                      onClick={async () => {
+                        try {
+                          setGenerating(true);
+                          const payload = {
+                            title: form.title,
+                            location: form.location,
+                            type: form.type,
+                            guests: Number(form.guests) || 1,
+                            amenities: form.amenities ? form.amenities.split(",").map(s => s.trim()) : [],
+                            price: Number(form.pricePerNight) || 0,
+                          };
+                          const res = await (await import('../../services/api')).generateDescription(payload);
+                          if (res?.description) setForm((p) => ({ ...p, description: res.description }));
+                        } catch (err: any) {
+                          alert(err?.message || 'Failed to generate description');
+                        } finally {
+                          setGenerating(false);
+                        }
+                      }}
+                      disabled={generating}
+                    >
+                      {generating ? 'Generating...' : 'Generate description'}
+                    </button>
+                  </div>
                 </label>
               </div>
 

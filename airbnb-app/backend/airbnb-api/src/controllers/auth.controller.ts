@@ -7,6 +7,7 @@ import prisma from "../config/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { sendEmail } from "../config/email.js";
 import { passwordResetEmail, passwordResetSuccessEmail, welcomeEmail } from "../templates/emails.js";
+import { getOptimizedUrl } from "../config/cloudinary.js";
 
 const getJwtSecret = (): string => {
   const secret = process.env["JWT_SECRET"];
@@ -159,7 +160,17 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
       const host = await prisma.user.findUnique({
         where: { id: user.id },
         include: {
-          listings: true
+          listings: {
+            include: {
+              photos: {
+                select: {
+                  id: true,
+                  url: true,
+                  publicId: true
+                }
+              }
+            }
+          }
         }
       });
 
@@ -168,7 +179,18 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
         return;
       }
 
-      res.json(sanitizeUser(host));
+      res.json(
+        sanitizeUser({
+          ...host,
+          listings: host.listings.map((listing) => ({
+            ...listing,
+            photos: listing.photos.map((photo) => ({
+              ...photo,
+              optimizedUrl: getOptimizedUrl(photo.url, 600, 400)
+            }))
+          }))
+        })
+      );
       return;
     }
 

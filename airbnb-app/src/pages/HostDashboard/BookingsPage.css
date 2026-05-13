@@ -201,7 +201,7 @@
 }
 
 .logo-cell {
-  width: 60px;
+  width: 80px;
 }
 
 .guest-avatar {
@@ -210,6 +210,15 @@
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #f0f0f0;
+}
+
+.listing-photo {
+  width: 80px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #e5e5e5;
+  display: block;
 }
 
 .name-cell {
@@ -486,6 +495,11 @@
   .guest-avatar {
     width: 36px;
     height: 36px;
+  }
+
+  .listing-photo {
+    width: 70px;
+    height: 52px;
   }
 
   .view-btn {

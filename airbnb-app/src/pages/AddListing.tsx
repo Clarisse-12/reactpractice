@@ -1,6 +1,6 @@
 import './AddListing.css'
 import { useState, useRef } from 'react'
-import { createListing, uploadListingPhotos } from '../services/api'
+import { createListing, uploadListingPhotos, generateDescription } from '../services/api'
 import { useNavigate } from 'react-router-dom'
 import { FiUploadCloud, FiX } from 'react-icons/fi'
 
@@ -26,6 +26,7 @@ export default function AddListing() {
   const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [generating, setGenerating] = useState(false)
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files
@@ -305,6 +306,34 @@ export default function AddListing() {
                   rows={6}
                   required
                 />
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="add-listing-actions__secondary"
+                    onClick={async () => {
+                      try {
+                        setGenerating(true)
+                        const payload = {
+                          title,
+                          location,
+                          type,
+                          guests: Number(guests) || 1,
+                          amenities: selectedAmenities,
+                          price: Number(pricePerNight) || 0,
+                        }
+                        const res = await generateDescription(payload)
+                        if (res?.description) setDescription(res.description)
+                      } catch (err: any) {
+                        setError(err?.message || 'Failed to generate description')
+                      } finally {
+                        setGenerating(false)
+                      }
+                    }}
+                    disabled={generating}
+                  >
+                    {generating ? 'Generating...' : 'Generate description'}
+                  </button>
+                </div>
               </label>
             </div>
           </section>

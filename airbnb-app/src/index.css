@@ -1513,8 +1513,32 @@ a {
 
 .listing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 280px));
+  grid-template-columns: repeat(4, 1fr);
   gap: 26px;
+}
+
+@media (max-width: 1600px) {
+  .listing-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .listing-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .listing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .listing-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 
 .listing-card {

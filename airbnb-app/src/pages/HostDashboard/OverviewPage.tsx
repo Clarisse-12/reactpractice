@@ -49,6 +49,7 @@ export function OverviewPage() {
 
   const dashboardStats = useMemo(() => {
     const totalListings = hostListings.length;
+    const cabins = hostListings.filter((listing) => String(listing.type).toUpperCase() === 'CABIN').length;
     const totalBookings = hostBookingRows.length;
     const confirmedBookings = hostBookingRows.filter((booking) => String(booking.status).toUpperCase() === 'CONFIRMED' || String(booking.status).toUpperCase() === 'APPROVED').length;
     const pendingBookings = hostBookingRows.filter((booking) => String(booking.status).toUpperCase() === 'PENDING').length;
@@ -60,6 +61,7 @@ export function OverviewPage() {
 
     return {
       totalListings,
+      cabins,
       totalBookings,
       confirmedBookings,
       pendingBookings,
@@ -98,6 +100,15 @@ export function OverviewPage() {
                 <p>Total Listings</p>
                 <strong>{dashboardStats.totalListings}</strong>
                 <small>Listings in your host account</small>
+              </div>
+            </article>
+
+            <article className="overview-metric-card">
+              <span className="overview-metric-card__icon"><FiHome /></span>
+              <div>
+                <p>Cabins</p>
+                <strong>{dashboardStats.cabins}</strong>
+                <small>Cabin listings in your account</small>
               </div>
             </article>
 

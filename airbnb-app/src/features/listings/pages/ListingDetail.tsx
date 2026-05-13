@@ -59,7 +59,12 @@ export default function ListingDetail() {
       setBookingSuccess(true)
       setBookingForm({ checkin: '', checkout: '' })
     } catch (err: any) {
-      setBookingError(err?.message || 'Failed to create booking')
+      const errMsg = err?.message || 'Failed to create booking'
+      if (errMsg.includes('Missing or invalid authorization header') || errMsg.includes('Unauthorized')) {
+        setBookingError('Please sign in to proceed with booking')
+      } else {
+        setBookingError(errMsg)
+      }
     } finally {
       setBookingLoading(false)
     }

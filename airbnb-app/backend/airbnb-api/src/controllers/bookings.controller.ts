@@ -6,6 +6,7 @@ import { sendEmail } from "../config/email.js";
 import { bookingConfirmationEmail } from "../templates/emails.js";
 import { invalidateCache } from "../config/cache";
 import { isUuid } from "../utils/ids";
+import { getOptimizedUrl } from "../config/cloudinary.js";
 
 const isBookingStatus = (value: unknown): value is BookingStatus => {
   return Object.values(BookingStatus).includes(value as BookingStatus);
@@ -64,17 +65,39 @@ const parseIsoDateOnly = (value: string): Date | null => {
 };
 
 export const getAllBookings = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    // This endpoint requires authentication
+    if (!req.userId || !req.role) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Number(req.query.limit) || 10);
     const skip = (page - 1) * limit;
 
+    let where: any = {};
+
+    // If HOST, show bookings for their listings only
+    if (req.role === "HOST") {
+      where = {
+        listing: {
+          hostId: req.userId
+        }
+      };
+    }
+    // If GUEST, show their own bookings only
+    else if (req.role === "GUEST") {
+      where = { guestId: req.userId };
+    }
+
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({
+        where,
         skip,
         take: limit,
         include: {
@@ -86,16 +109,32 @@ export const getAllBookings = async (
           listing: {
             select: {
               title: true,
-              location: true
+              location: true,
+              photos: {
+                select: {
+                  url: true
+                }
+              }
             }
           }
         }
       }),
-      prisma.booking.count()
+      prisma.booking.count({ where })
     ]);
 
+    const bookingsWithOptimized = bookings.map(booking => ({
+      ...booking,
+      listing: booking.listing ? {
+        ...booking.listing,
+        photos: booking.listing.photos.map(photo => ({
+          url: photo.url,
+          optimizedUrl: getOptimizedUrl(photo.url, 80, 60)
+        }))
+      } : booking.listing
+    }));
+
     res.json({
-      data: bookings,
+      data: bookingsWithOptimized,
       meta: {
         total,
         page,
@@ -120,7 +159,15 @@ export const getBookingById = async (req: Request, res: Response, next: NextFunc
       where: { id },
       include: {
         guest: true,
-        listing: true
+        listing: {
+          include: {
+            photos: {
+              select: {
+                url: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -129,7 +176,18 @@ export const getBookingById = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    res.json(booking);
+    const bookingWithOptimized = {
+      ...booking,
+      listing: booking.listing ? {
+        ...booking.listing,
+        photos: booking.listing.photos.map(photo => ({
+          url: photo.url,
+          optimizedUrl: getOptimizedUrl(photo.url, 900, 600)
+        }))
+      } : booking.listing
+    };
+
+    res.json(bookingWithOptimized);
   } catch (error) {
     next({ error, operation: "getBookingById" });
   }
@@ -422,7 +480,12 @@ export const getUserBookings = async (req: Request, res: Response, next: NextFun
               id: true,
               title: true,
               location: true,
-              pricePerNight: true
+              pricePerNight: true,
+              photos: {
+                select: {
+                  url: true
+                }
+              }
             }
           }
         }
@@ -430,8 +493,19 @@ export const getUserBookings = async (req: Request, res: Response, next: NextFun
       prisma.booking.count({ where: { guestId: userId } })
     ]);
 
+    const bookingsWithOptimized = bookings.map(booking => ({
+      ...booking,
+      listing: booking.listing ? {
+        ...booking.listing,
+        photos: booking.listing.photos.map(photo => ({
+          url: photo.url,
+          optimizedUrl: getOptimizedUrl(photo.url, 80, 60)
+        }))
+      } : booking.listing
+    }));
+
     res.json({
-      data: bookings,
+      data: bookingsWithOptimized,
       meta: {
         total,
         page,

@@ -104,7 +104,7 @@ export const getListingById = async (id: string) => apiGet<any>(`/listings/${id}
 
 export const createBooking = async (payload: { listingId: string; checkIn: string; checkOut: string }) => apiPost<any>("/bookings", payload, true)
 
-export const getBookings = async () => apiGet<{ data: any[]; meta?: any }>("/bookings")
+export const getBookings = async () => apiGet<{ data: any[]; meta?: any }>("/bookings", true)
 
 export const updateBookingStatus = async (id: string, status: string) => apiPut<any>(`/bookings/${id}`, { status }, true)
 
@@ -117,4 +117,16 @@ export const getUsersStats = async () => apiGet<any>("/users/stats", true)
 export const getListingsStats = async () => apiGet<any>("/listings/stats")
 
 export const updateUser = async (id: string, payload: unknown) => apiPut<any>(`/users/${id}`, payload, true)
+
+export const aiChat = async (message: string, sessionId: string) => {
+  const headers: Record<string,string> = { "Content-Type": "application/json" }
+  const res = await fetch(`${apiBaseUrl}/ai/chat`, { method: 'POST', headers, body: JSON.stringify({ message, sessionId }) })
+  return handleResponse<any>(res)
+}
+
+export const generateDescription = async (payload: { title: string; location: string; type: string; guests: number | string; amenities: string[] | string; price: number | string }) => {
+  const headers: Record<string,string> = { "Content-Type": "application/json" }
+  const res = await fetch(`${apiBaseUrl}/ai/description`, { method: 'POST', headers, body: JSON.stringify(payload) })
+  return handleResponse<{ description: string }>(res)
+}
 

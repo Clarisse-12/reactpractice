@@ -19,6 +19,7 @@ import {
   BookingsPage,
   MessagesPage
 } from './pages/HostDashboard'
+import ChatWidget from './components/ChatWidget'
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   )
 }

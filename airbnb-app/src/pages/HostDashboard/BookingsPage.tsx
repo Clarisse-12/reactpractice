@@ -92,11 +92,10 @@ export function BookingsPage() {
     });
   };
 
-  const getGuestPhoto = (booking: Booking) => {
-    if (booking.guest?.photo) return booking.guest.photo;
-    if (booking.guestPhoto) return booking.guestPhoto;
-    if (booking.listing?.photos?.[0]?.url) return booking.listing.photos[0].url;
-    return 'https://via.placeholder.com/40?text=Guest';
+  const getListingPhoto = (booking: Booking) => {
+    const photo = booking.listing?.photos?.[0];
+    if (!photo) return 'https://via.placeholder.com/80?text=Listing';
+    return photo.optimizedUrl || photo.url || 'https://via.placeholder.com/80?text=Listing';
   };
 
   const handleUpdateStatus = async (bookingId: string, status: 'CONFIRMED' | 'CANCELLED') => {
@@ -194,9 +193,9 @@ export function BookingsPage() {
                     <td className="sl-cell">{String(startIndex + index + 1).padStart(2, '0')}</td>
                     <td className="logo-cell">
                       <img
-                        src={getGuestPhoto(booking)}
-                        alt={booking.guest?.name || 'Guest'}
-                        className="guest-avatar"
+                        src={getListingPhoto(booking)}
+                        alt={booking.listing?.title || 'Listing'}
+                        className="listing-photo"
                       />
                     </td>
                     <td className="name-cell">

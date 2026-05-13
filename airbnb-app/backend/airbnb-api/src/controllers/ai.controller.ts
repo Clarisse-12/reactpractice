@@ -148,7 +148,7 @@ If asked about specific listings, refer to the context provided.`,
   ["human", "{input}"],
 ]);
 
-const chatChain = chatPrompt.pipe(llm);
+const chatChain = chatPrompt.pipe(llm).pipe(new StringOutputParser());
 
 const chainWithHistory = new RunnableWithMessageHistory({
   runnable: chatChain,

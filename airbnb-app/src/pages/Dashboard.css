@@ -179,9 +179,10 @@
 /* ========== CARDS ========== */
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 260px));
   gap: 20px;
   margin-bottom: 32px;
+  justify-content: start;
 }
 
 .dashboard-card {

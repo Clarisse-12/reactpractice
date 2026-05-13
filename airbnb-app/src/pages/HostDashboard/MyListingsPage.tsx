@@ -31,6 +31,7 @@ export function MyListingsPage() {
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     me().then((user) => {
@@ -141,6 +142,25 @@ export function MyListingsPage() {
 
   const totalPhotoSlots = photos.length + newFiles.length;
 
+  const getDescriptionPreview = (description?: string) => {
+    const text = description?.trim() || '';
+    if (!text) return { preview: '', hasMore: false };
+
+    const words = text.split(/\s+/).filter(Boolean);
+    const hasMore = words.length > 20;
+    return {
+      preview: hasMore ? words.slice(0, 20).join(' ') : text,
+      hasMore,
+    };
+  };
+
+  const toggleDescription = (listingId: string) => {
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [listingId]: !prev[listingId],
+    }));
+  };
+
   return (
     <div className="my-listings-page">
       <header className="my-listings-hero">
@@ -191,7 +211,27 @@ export function MyListingsPage() {
               </div>
               <div className="listing-card-cute__content">
                 <h3>{listing.title || 'Untitled Listing'}</h3>
-                <p className="listing-card-cute__description">{listing.description || 'No description provided.'}</p>
+                <div className="listing-card-cute__description-wrap">
+                  <p className="listing-card-cute__description">
+                    {(() => {
+                      const { preview, hasMore } = getDescriptionPreview(listing.description);
+                      const isExpanded = !!expandedDescriptions[listing.id];
+
+                      if (!listing.description) return 'No description provided.';
+                      if (!hasMore || isExpanded) return listing.description;
+                      return `${preview}...`;
+                    })()}
+                  </p>
+                  {getDescriptionPreview(listing.description).hasMore && (
+                    <button
+                      type="button"
+                      className="listing-card-cute__read-more"
+                      onClick={() => toggleDescription(listing.id)}
+                    >
+                      {expandedDescriptions[listing.id] ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
+                </div>
                 <div className="listing-card-cute__meta">
                   <span><FiMapPin /> {listing.location || 'Unknown'}</span>
                   <span><FiHome /> {listing.guests || 1} guests</span>

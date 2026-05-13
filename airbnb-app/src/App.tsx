@@ -2,6 +2,7 @@ import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import AddListing from './pages/AddListing'
 import Signup from './pages/Signup'
@@ -22,6 +23,9 @@ import {
 import ChatWidget from './components/ChatWidget'
 
 function App() {
+  const location = useLocation()
+  const showFooter = ['/', '/listings', '/signup'].includes(location.pathname)
+
   return (
     <div className="app-shell">
       <Navbar />
@@ -49,7 +53,7 @@ function App() {
           <Route path="/dashboard/bookings" element={<ProtectedRoute allowedRole="host"><DashboardLayout><BookingsPage /></DashboardLayout></ProtectedRoute>} />
         </Routes>
       </main>
-      <Footer />
+      {showFooter && <Footer />}
       <ChatWidget />
     </div>
   )

@@ -181,6 +181,27 @@
   line-height: 1.6;
 }
 
+.listing-card-cute__description-wrap {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.listing-card-cute__read-more {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ff7f50;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.listing-card-cute__read-more:hover {
+  text-decoration: underline;
+}
+
 .listing-card-cute__meta {
   display: flex;
   flex-wrap: wrap;

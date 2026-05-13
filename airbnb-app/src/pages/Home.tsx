@@ -1,5 +1,5 @@
 import homeImage from '../assets/home.png'
-import { FiCalendar, FiMapPin, FiHome, FiChevronLeft, FiChevronRight, FiPlus, FiMinus, FiArrowRight, FiUser } from 'react-icons/fi'
+import { FiCalendar, FiMapPin, FiHome, FiChevronLeft, FiChevronRight, FiArrowRight, FiUser } from 'react-icons/fi'
 import { useState, useEffect } from 'react'
 import { ListingCard } from '../features/listings'
 import { useStore } from '../store/StoreContext'
@@ -23,36 +23,6 @@ const steps = [
     icon: FiHome,
     title: 'Visit the place and enjoy the experience.',
     description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum, amet?',
-  },
-]
-
-const connectBullets = [
-  'Find popular businesses and important sites near you.',
-  'Get place recommendations based on your preferences.',
-  'Explore major spots and landmarks around your location.',
-  'Discover diverse categories to navigate various areas.',
-]
-
-const faqItems = [
-  {
-    id: 1,
-    question: 'What Types Of Houses Are Available For Rent?',
-    answer: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.'
-  },
-  {
-    id: 2,
-    question: 'What Are The Lease Terms?',
-    answer: 'Lease terms vary by property, but most rentals include a fixed term, renewal options, and conditions for deposits and cancellations.'
-  },
-  {
-    id: 3,
-    question: 'What Is The Rental Application Process?',
-    answer: 'The rental application process involves completing an application form, providing documentation, and waiting for approval from the property owner.'
-  },
-  {
-    id: 4,
-    question: 'What Are Your Rental Rates?',
-    answer: 'Our rental rates vary depending on the property type, location, and season. Please contact us for specific pricing information.'
   },
 ]
 
@@ -119,7 +89,6 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(0)
   const [visibleCount, setVisibleCount] = useState(getVisible())
   const [savedFeatured, setSavedFeatured] = useState<string[]>([])
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
   const [testimonialIndex, setTestimonialIndex] = useState(0)
   const pagesData = Array.from({ length: Math.max(1, Math.ceil(items.length / visibleCount)) }, (_, i) =>
     items.slice(i * visibleCount, i * visibleCount + visibleCount),
@@ -278,94 +247,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-connect" aria-labelledby="connect-title">
-        <div className="home-connect__intro">
-          <h2 id="connect-title" className="home-connect__headline">
-            We&apos;re — Here to Connect Businesses &amp; <span>Travel Enthusiasts</span> on Our Platform
-          </h2>
-          <p className="home-connect__intro-text">
-            We understand the hassle of finding a popular restaurant or highly reviewed museum during tours.
-            We are here to make the process simple and smooth. Our dedicated platform lets you find and visit
-            hundreds of incredible spots in various categories.
-          </p>
-        </div>
-
-        <div className="home-connect__panel">
-          <div className="home-connect__left">
-            <p className="home-connect__eyebrow">Platform</p>
-            <h2 id="connect-title" className="home-connect__title">
-              Find your perfect Place based on <span>your interest</span>
-            </h2>
-
-            <div className="home-connect__visual">
-              <img src={homeImage} alt="Traveler overlooking a lake and mountains" />
-            </div>
-          </div>
-
-          <div className="home-connect__right">
-            <p className="home-connect__description">
-              Want to have a fantastic travel experience? Let us connect you with diverse categories of businesses,
-              public spots, and famous landmarks so that you can create unforgettable memories.
-            </p>
-
-            <ul className="home-connect__bullets">
-              {connectBullets.map((bullet) => (
-                <li key={bullet}>{bullet}</li>
-              ))}
-            </ul>
-
-            <button className="home-connect__button" type="button">
-              Get Started Now
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-video">
-        <div className="home-video__container">
-          <iframe
-            className="home-video__frame"
-            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-            title="Travel Video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </section>
-
-      <section className="home-faq">
-        <div className="home-faq__container">
-          <div className="home-faq__left">
-            <p className="home-faq__kicker">FAQ</p>
-            <h2 className="home-faq__title">Frequently Asked Questions</h2>
-            <p className="home-faq__description">
-              Our publications can provide quality and useful tips and advice for companies on how to evaluate SaaS
-              providers and choose the best one for their needs, taking into account factors such as price, features and
-              support.
-            </p>
-          </div>
-
-          <div className="home-faq__right">
-            {faqItems.map((item) => (
-              <div key={item.id} className="home-faq__item">
-                <button
-                  className="home-faq__question"
-                  onClick={() => setExpandedFaq((current) => (current === item.id ? null : item.id))}
-                >
-                  <span>{item.question}</span>
-                  {expandedFaq === item.id ? <FiMinus /> : <FiPlus />}
-                </button>
-                {expandedFaq === item.id && (
-                  <div className="home-faq__answer">
-                    {item.answer}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="home-testimonial" aria-labelledby="testimonial-title">
         <div className="home-testimonial__overlay" aria-hidden="true" />
         <div className="home-testimonial__content">
@@ -443,23 +324,6 @@ export default function Home() {
               </div>
             </article>
           ))}
-        </div>
-      </section>
-      <section className="home-download">
-        <div className="home-download__inner">
-          <div className="home-download__visual">
-            <img src={homeImage} alt="App preview" />
-          </div>
-
-          <div className="home-download__content">
-            <h3 className="home-download__title">Download Our App</h3>
-            <p className="home-download__text">It is a long established fact that a reader will be distracted by the readable content.</p>
-
-            <div className="home-download__buttons">
-              <button className="btn btn--ghost">Available on the App Store</button>
-              <button className="btn btn--ghost">Get it on Google Play</button>
-            </div>
-          </div>
         </div>
       </section>
 

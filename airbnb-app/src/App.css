@@ -1,11 +1,14 @@
 .app-shell {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--app-bg);
   color: var(--app-text);
 }
 
 .app-content {
-  min-height: calc(100vh - 164px);
+  flex: 1;
+  min-height: 0;
 }
 
 .page {

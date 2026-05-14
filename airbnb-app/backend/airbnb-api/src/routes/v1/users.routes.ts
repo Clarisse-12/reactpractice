@@ -12,7 +12,7 @@ import {
   listHostRequests,
   handleHostRequest
 } from "../../controllers/users.controller";
-import { authenticate, requireHost } from "../../middlewares/auth.middleware";
+import { authenticate, requireAdmin, requireHost } from "../../middlewares/auth.middleware";
 
 /**
  * @swagger
@@ -522,8 +522,8 @@ import { authenticate, requireHost } from "../../middlewares/auth.middleware";
 
 const usersRouter = Router();
 
-usersRouter.get("/stats", getUserStats);
-usersRouter.get("/", getAllUsers);
+usersRouter.get("/stats", authenticate, requireAdmin, getUserStats);
+usersRouter.get("/", authenticate, requireAdmin, getAllUsers);
 
 // Host request management
 usersRouter.get("/host-requests", authenticate, requireHost, listHostRequests);

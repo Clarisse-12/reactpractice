@@ -19,6 +19,7 @@ export interface State {
   saved: string[]
   user?: any
   darkMode: boolean
+  authReady: boolean
 }
 
 export type Action =
@@ -29,3 +30,4 @@ export type Action =
   | { type: 'SET_USER'; payload: any }
   | { type: 'LOGOUT' }
   | { type: 'SET_DARKMODE'; payload: boolean }
+  | { type: 'SET_AUTH_READY'; payload: boolean }

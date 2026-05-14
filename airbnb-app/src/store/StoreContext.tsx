@@ -24,6 +24,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           auth.removeToken()
           dispatch({ type: 'LOGOUT' })
         })
+        .finally(() => {
+          dispatch({ type: 'SET_AUTH_READY', payload: true })
+        })
+    } else {
+      dispatch({ type: 'SET_AUTH_READY', payload: true })
     }
 
     const stored = localStorage.getItem('dark_mode')

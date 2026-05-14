@@ -33,6 +33,20 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash("password123", 10);
 
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@airbnb.local" },
+    update: {},
+    create: {
+      name: "System Admin",
+      email: "admin@airbnb.local",
+      username: "airbnb_admin",
+      phone: "+1-212-555-0100",
+      password: hashedPassword,
+      role: "ADMIN" as Role,
+      isActive: true
+    }
+  });
+
   const alice = await prisma.user.upsert({
     where: { email: "alice@example.com" },
     update: {},
@@ -42,7 +56,8 @@ async function main() {
       username: "alice_host",
       phone: "+1-212-555-0101",
       password: hashedPassword,
-      role: Role.HOST
+      role: Role.HOST,
+      isActive: true
     }
   });
 
@@ -55,7 +70,8 @@ async function main() {
       username: "ben_host",
       phone: "+1-212-555-0102",
       password: hashedPassword,
-      role: Role.HOST
+      role: Role.HOST,
+      isActive: true
     }
   });
 
@@ -68,7 +84,8 @@ async function main() {
       username: "bob_guest",
       phone: "+1-212-555-0103",
       password: hashedPassword,
-      role: Role.GUEST
+      role: Role.GUEST,
+      isActive: true
     }
   });
 
@@ -81,7 +98,8 @@ async function main() {
       username: "carol_guest",
       phone: "+1-212-555-0104",
       password: hashedPassword,
-      role: Role.GUEST
+      role: Role.GUEST,
+      isActive: true
     }
   });
 
@@ -94,11 +112,12 @@ async function main() {
       username: "kevin_guest",
       phone: "+1-212-555-0105",
       password: hashedPassword,
-      role: Role.GUEST
+      role: Role.GUEST,
+      isActive: true
     }
   });
 
-  console.log("👥 Created users");
+  console.log(`👥 Created users including admin ${admin.email}`);
 
   const apartment = await prisma.listing.create({
     data: {

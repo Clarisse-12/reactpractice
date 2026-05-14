@@ -116,6 +116,18 @@ export const getUsersStats = async () => apiGet<any>("/users/stats", true)
 
 export const getListingsStats = async () => apiGet<any>("/listings/stats")
 
+export const getAdminOverview = async () => apiGet<any>("/admin/overview", true)
+export const getAdminMonthlyStats = async (year?: number) => {
+  const yearParam = year ? `?year=${year}` : ''
+  return apiGet<any[]>(`/admin/monthly-stats${yearParam}`, true)
+}
+export const getAdminUsers = async () => apiGet<any[]>("/admin/users", true)
+export const getAdminListings = async () => apiGet<any[]>("/admin/listings", true)
+export const getAdminBookings = async () => apiGet<any[]>("/admin/bookings", true)
+export const setAdminUserStatus = async (id: string, isActive: boolean) =>
+  apiPut<any>(`/admin/users/${id}/status`, { isActive }, true)
+export const deleteAdminUser = async (id: string) => apiDelete<any>(`/admin/users/${id}`, true)
+
 export const updateUser = async (id: string, payload: unknown) => apiPut<any>(`/users/${id}`, payload, true)
 
 export const aiChat = async (message: string, sessionId: string) => {

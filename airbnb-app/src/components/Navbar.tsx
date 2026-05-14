@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import "./Navbar.css";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon } from "react-icons/fi";
+import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon, FiShield } from "react-icons/fi";
 import { auth } from '../services/api'
 import { Transition } from "@headlessui/react";
 import numeral from "numeral";
@@ -22,6 +22,12 @@ export default function Navbar() {
       return [
         { to: '/', label: 'Home' },
         { to: '/listings', label: 'Listings' },
+      ]
+    }
+
+    if (role === 'admin') {
+      return [
+        { to: '/admin/dashboard', label: 'Admin Dashboard' },
       ]
     }
 
@@ -69,35 +75,53 @@ export default function Navbar() {
       </nav>
 
       <div className="navbar__actions">
-        <button 
-          className="navbar__icon-button" 
-          type="button" 
-          aria-label="Favorites"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <FiHeart className="navbar__icon" />
-          <span className="navbar__badge">{state.saved.length}</span>
-        </button>
-        <button className="navbar__icon-button" type="button" aria-label="Toggle dark mode" onClick={() => {
-          const next = !isDark
-          dispatch({ type: 'SET_DARKMODE', payload: next })
-          localStorage.setItem('dark_mode', next ? '1' : '0')
-          document.documentElement.classList.toggle('dark', next)
-        }}>
-          {isDark ? <FiSun className="navbar__icon" /> : <FiMoon className="navbar__icon" />}
-        </button>
+        {role !== 'admin' ? (
+          <>
+            <button 
+              className="navbar__icon-button" 
+              type="button" 
+              aria-label="Favorites"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <FiHeart className="navbar__icon" />
+              <span className="navbar__badge">{state.saved.length}</span>
+            </button>
+            <button className="navbar__icon-button" type="button" aria-label="Toggle dark mode" onClick={() => {
+              const next = !isDark
+              dispatch({ type: 'SET_DARKMODE', payload: next })
+              localStorage.setItem('dark_mode', next ? '1' : '0')
+              document.documentElement.classList.toggle('dark', next)
+            }}>
+              {isDark ? <FiSun className="navbar__icon" /> : <FiMoon className="navbar__icon" />}
+            </button>
+          </>
+        ) : (
+          <span className="navbar__admin-pill">Admin Access</span>
+        )}
 
         {state.user ? (
           <div className="navbar__profile-menu">
-            <Link to="/profile" className="navbar__profile-card" aria-label="Profile">
-              <span className="navbar__profile-avatar">
-                {profileAvatar ? <img src={profileAvatar} alt="Profile avatar" /> : <span>{userInitial}</span>}
-              </span>
-              <span className="navbar__profile-copy">
-                <strong>{profileName}</strong>
-                <small>{profileEmail}</small>
-              </span>
-            </Link>
+            {role === 'admin' ? (
+              <div className="navbar__profile-card navbar__profile-card--guest" aria-label="Admin profile">
+                <span className="navbar__profile-avatar navbar__profile-avatar--guest">
+                  <FiShield className="navbar__icon" />
+                </span>
+                <span className="navbar__profile-copy">
+                  <strong>{profileName}</strong>
+                  <small>{profileEmail}</small>
+                </span>
+              </div>
+            ) : (
+              <Link to="/profile" className="navbar__profile-card" aria-label="Profile">
+                <span className="navbar__profile-avatar">
+                  {profileAvatar ? <img src={profileAvatar} alt="Profile avatar" /> : <span>{userInitial}</span>}
+                </span>
+                <span className="navbar__profile-copy">
+                  <strong>{profileName}</strong>
+                  <small>{profileEmail}</small>
+                </span>
+              </Link>
+            )}
             <button className="navbar__logout navbar__logout--pill" type="button" onClick={() => {
               auth.removeToken()
               dispatch({ type: 'LOGOUT' })
@@ -177,6 +201,19 @@ export default function Navbar() {
           </Transition.Child>
         </div>
       </Transition>
+
+      <style>{`
+        .navbar__admin-pill {
+          display: inline-flex;
+          align-items: center;
+          padding: 10px 14px;
+          border-radius: 999px;
+          background: rgba(255, 90, 95, 0.12);
+          color: #ff5a5f;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+      `}</style>
 
       <style>{`
         .saved-listings-overlay {

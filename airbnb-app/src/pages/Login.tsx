@@ -33,6 +33,11 @@ export default function Login() {
         if (res.user) {
           dispatch({ type: 'SET_USER', payload: res.user })
           const role = String(res.user.role || 'guest').toLowerCase()
+          if (role === 'admin') {
+            navigate('/admin/dashboard')
+            return
+          }
+
           navigate(role === 'guest' ? '/listings' : '/dashboard/overview')
         } else {
           navigate('/listings')

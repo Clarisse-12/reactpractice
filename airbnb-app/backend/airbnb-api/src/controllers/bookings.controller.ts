@@ -94,6 +94,9 @@ export const getAllBookings = async (
     else if (req.role === "GUEST") {
       where = { guestId: req.userId };
     }
+    else if (req.role === "ADMIN") {
+      where = {};
+    }
 
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({

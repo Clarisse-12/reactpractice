@@ -116,6 +116,11 @@ export const login = async (req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
 
+    if (!user.isActive) {
+      res.status(403).json({ message: "Account disabled" });
+      return;
+    }
+
     const userPassword = (user as { password?: string }).password;
     if (!userPassword) {
       res.status(500).json({ message: "User password is not available" });
@@ -153,6 +158,11 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    if (user.role === "ADMIN") {
+      res.json(sanitizeUser(user));
       return;
     }
 

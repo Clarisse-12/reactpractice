@@ -7,6 +7,7 @@ export const initialState: State = {
   saved: [],
   user: null,
   darkMode: false,
+  authReady: false,
 }
 
 export function storeReducer(state: State, action: Action): State {
@@ -30,6 +31,8 @@ export function storeReducer(state: State, action: Action): State {
       return { ...state, user: null }
     case 'SET_DARKMODE':
       return { ...state, darkMode: action.payload }
+    case 'SET_AUTH_READY':
+      return { ...state, authReady: action.payload }
     default:
       return state
   }

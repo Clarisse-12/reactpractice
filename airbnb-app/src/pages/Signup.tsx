@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Signup.css'
 import { register } from '../services/api'
 
 export default function Signup() {
   const navigate = useNavigate()
+  const signupTimerRef = useRef<number | null>(null)
+  const [signupSuccess, setSignupSuccess] = useState('')
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -27,6 +29,7 @@ export default function Signup() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setSignupSuccess('')
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match')
       return
@@ -43,12 +46,22 @@ export default function Signup() {
 
     register(payload)
       .then(() => {
-        navigate('/login')
+        setSignupSuccess('You have signed up successfully.')
+        if (signupTimerRef.current) window.clearTimeout(signupTimerRef.current)
+        signupTimerRef.current = window.setTimeout(() => {
+          navigate('/login')
+        }, 2000)
       })
       .catch((err) => {
         alert(err?.message || 'Signup failed')
       })
   }
+
+  useEffect(() => {
+    return () => {
+      if (signupTimerRef.current) window.clearTimeout(signupTimerRef.current)
+    }
+  }, [])
 
   return (
     <section className="signup-page signup-page--center" aria-label="Sign up">
@@ -181,6 +194,8 @@ export default function Signup() {
             <button type="submit" className="signup-submit-btn">
               Sign Up
             </button>
+
+            {signupSuccess && <p className="signup-success">{signupSuccess}</p>}
           </form>
 
           <p className="signup-login-link">

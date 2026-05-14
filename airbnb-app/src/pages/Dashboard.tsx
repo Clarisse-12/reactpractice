@@ -1,13 +1,18 @@
 import './Dashboard.css'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { me, getBookings, updateBookingStatus, deleteBooking, updateListing, deleteListing } from '../services/api'
+import { me, getBookings, updateBookingStatus, updateListing, deleteListing } from '../services/api'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [bookings, setBookings] = useState<any[]>([])
   const [hostListings, setHostListings] = useState<any[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<null | { type: 'cancel-booking' | 'delete-listing'; id: string }>(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -50,12 +55,9 @@ export default function Dashboard() {
   }
 
   const handleCancelBooking = async (id: string) => {
-    try {
-      await deleteBooking(id)
-      setBookings((prev) => prev.filter((b) => b.id !== id))
-    } catch (err: any) {
-      alert(err?.message || 'Failed to cancel booking')
-    }
+    setConfirmAction({ type: 'cancel-booking', id })
+    setCancelReason('')
+    setConfirmOpen(true)
   }
 
   const handleEditStart = (listing: any) => {
@@ -92,12 +94,40 @@ export default function Dashboard() {
   }
 
   const handleDeleteListing = async (listingId: string) => {
+    setConfirmAction({ type: 'delete-listing', id: listingId })
+    setConfirmOpen(true)
+  }
+
+  const closeConfirm = () => {
+    if (confirmLoading) return
+    setConfirmOpen(false)
+    setConfirmAction(null)
+    setCancelReason('')
+  }
+
+  const runConfirmedAction = async () => {
+    if (!confirmAction) return
+    setConfirmLoading(true)
     try {
-      await deleteListing(listingId)
-      setHostListings((prev) => prev.filter((l) => l.id !== listingId))
-      setBookings((prev) => prev.filter((b) => b.listingId !== listingId))
+      if (confirmAction.type === 'cancel-booking') {
+        if (!cancelReason.trim()) {
+          setConfirmLoading(false)
+          return
+        }
+        await updateBookingStatus(confirmAction.id, 'CANCELLED', cancelReason.trim())
+        setBookings((prev) => prev.map((b) => (b.id === confirmAction.id ? { ...b, status: 'CANCELLED', cancellationReason: cancelReason.trim() } : b)))
+      } else {
+        await deleteListing(confirmAction.id)
+        setHostListings((prev) => prev.filter((l) => l.id !== confirmAction.id))
+        setBookings((prev) => prev.filter((b) => b.listingId !== confirmAction.id))
+      }
+      setConfirmOpen(false)
+      setConfirmAction(null)
+      setCancelReason('')
     } catch (err: any) {
-      alert(err?.message || 'Failed to delete listing')
+      alert(err?.message || 'Action failed')
+    } finally {
+      setConfirmLoading(false)
     }
   }
 
@@ -174,6 +204,24 @@ export default function Dashboard() {
             </article>
           </div>
         ) : null}
+
+        <ConfirmModal
+          open={confirmOpen}
+          title={confirmAction?.type === 'delete-listing' ? 'Delete listing?' : 'Cancel booking?'}
+          message={confirmAction?.type === 'delete-listing'
+            ? 'Are you sure you want to delete this listing? This action cannot be undone.'
+            : 'Are you sure you want to cancel this booking? This action cannot be undone.'}
+          confirmLabel={confirmAction?.type === 'delete-listing' ? 'Delete' : 'Cancel booking'}
+          confirmTone="danger"
+          loading={confirmLoading}
+          reason={confirmAction?.type === 'cancel-booking' ? cancelReason : ''}
+          reasonLabel="Cancellation reason"
+          reasonPlaceholder="Tell the guest why this booking is being cancelled"
+          reasonRequired={confirmAction?.type === 'cancel-booking'}
+          onReasonChange={confirmAction?.type === 'cancel-booking' ? setCancelReason : undefined}
+          onConfirm={runConfirmedAction}
+          onCancel={closeConfirm}
+        />
 
         {role === 'host' ? (
           <section className="dashboard-table" id="my-listings">
@@ -265,19 +313,32 @@ export default function Dashboard() {
                     <td>{new Date(row.createdAt || row.checkIn || Date.now()).toDateString()}</td>
                     <td>{row.listing?.location || row.location || '—'}</td>
                     <td>
-                      <span className={`dashboard-table__status dashboard-table__status--${String(row.status || '').toLowerCase()}`}>
-                        {row.status || '—'}
-                      </span>
+                      <div className="dashboard-table__status-wrap">
+                        <span className={`dashboard-table__status dashboard-table__status--${String(row.status || '').toLowerCase()}`}>
+                          {row.status || '—'}
+                        </span>
+                        {String(row.status || '').toUpperCase() === 'CANCELLED' && row.cancellationReason ? (
+                          <small className="dashboard-table__status-reason">Reason: {row.cancellationReason}</small>
+                        ) : null}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {role === 'host' ? (
-                          <>
-                            <button className="dashboard-table__button" type="button" onClick={() => handleUpdateStatus(row.id, 'CONFIRMED')}>Confirm</button>
-                            <button className="dashboard-table__button dashboard-table__button--danger" type="button" onClick={() => handleUpdateStatus(row.id, 'CANCELLED')}>Decline</button>
-                          </>
+                          String(row.status || '').toUpperCase() === 'PENDING' ? (
+                            <>
+                              <button className="dashboard-table__button" type="button" onClick={() => handleUpdateStatus(row.id, 'CONFIRMED')}>Confirm</button>
+                              <button className="dashboard-table__button dashboard-table__button--danger" type="button" onClick={() => handleCancelBooking(row.id)}>Decline</button>
+                            </>
+                          ) : (
+                            <span className="dashboard-table__status-note">No actions available</span>
+                          )
                         ) : (
-                          <button className="dashboard-table__button dashboard-table__button--danger" type="button" onClick={() => handleCancelBooking(row.id)}>Cancel Booking</button>
+                          String(row.status || '').toUpperCase() === 'PENDING' ? (
+                            <button className="dashboard-table__button dashboard-table__button--danger" type="button" onClick={() => handleCancelBooking(row.id)}>Cancel Booking</button>
+                          ) : (
+                            <span className="dashboard-table__status-note">No actions available</span>
+                          )
                         )}
                       </div>
                     </td>

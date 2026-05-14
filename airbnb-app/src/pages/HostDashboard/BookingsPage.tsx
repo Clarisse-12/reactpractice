@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getBookings, updateBookingStatus } from '../../services/api';
 import { FiCheckCircle, FiXCircle, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import './BookingsPage.css';
+import ConfirmModal from '../../components/ConfirmModal';
 
 interface Booking {
   id: string;
@@ -13,6 +14,7 @@ interface Booking {
   checkOut?: string;
   paymentType?: string;
   status: string;
+  cancellationReason?: string | null;
   totalPrice?: number;
   guest?: { name?: string; photo?: string };
   listing?: { title?: string; photos?: any[] };
@@ -26,6 +28,10 @@ export function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | { bookingId: string; status: 'CONFIRMED' | 'CANCELLED' }>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -99,6 +105,13 @@ export function BookingsPage() {
   };
 
   const handleUpdateStatus = async (bookingId: string, status: 'CONFIRMED' | 'CANCELLED') => {
+    if (status === 'CANCELLED') {
+      setPendingAction({ bookingId, status });
+      setCancelReason('');
+      setConfirmOpen(true);
+      return;
+    }
+
     try {
       await updateBookingStatus(bookingId, status);
       setBookings((prev) => prev.map((booking) => (booking.id === bookingId ? { ...booking, status } : booking)));
@@ -108,7 +121,32 @@ export function BookingsPage() {
     }
   };
 
+  const closeConfirm = () => {
+    if (saving) return;
+    setConfirmOpen(false);
+    setPendingAction(null);
+    setCancelReason('');
+  };
+
+  const confirmCancel = async () => {
+    if (!pendingAction || !cancelReason.trim()) return;
+    setSaving(true);
+    try {
+      await updateBookingStatus(pendingAction.bookingId, 'CANCELLED', cancelReason.trim());
+      setBookings((prev) => prev.map((booking) => (booking.id === pendingAction.bookingId ? { ...booking, status: 'CANCELLED', cancellationReason: cancelReason.trim() } : booking)));
+      setFilteredBookings((prev) => prev.map((booking) => (booking.id === pendingAction.bookingId ? { ...booking, status: 'CANCELLED', cancellationReason: cancelReason.trim() } : booking)));
+      setConfirmOpen(false);
+      setPendingAction(null);
+      setCancelReason('');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update booking status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
+    <>
     <div className="bookings-page">
       <div className="bookings-header">
         <h1>Recent Bookings</h1>
@@ -182,7 +220,7 @@ export function BookingsPage() {
                   <th>LOGO</th>
                   <th>NAME</th>
                   <th>BOOKING DATE</th>
-                  <th>PAYMENT TYPE</th>
+                  <th>PAYMENT / REASON</th>
                   <th>STATUS</th>
                   <th>VIEW BOOKING</th>
                 </tr>
@@ -208,29 +246,52 @@ export function BookingsPage() {
                       {formatDate(booking.bookingDate || booking.checkIn)}
                     </td>
                     <td className="payment-cell">
-                      {booking.paymentType || 'Online'}
+                      {String(booking.status || '').toUpperCase() === 'CANCELLED' && booking.cancellationReason ? (
+                        <span className="payment-cell__reason">Reason: {booking.cancellationReason}</span>
+                      ) : (
+                        booking.paymentType || 'Online'
+                      )}
                     </td>
                     <td className="status-cell">
-                      <span className={`status-badge status-${getStatusColor(booking.status)}`}>
-                        {booking.status || 'PENDING'}
-                      </span>
+                      <div className="status-cell__wrap">
+                        <span className={`status-badge status-${getStatusColor(booking.status)}`}>
+                          {booking.status || 'PENDING'}
+                        </span>
+                      </div>
                     </td>
                     <td className="action-cell">
                       <div className="booking-actions">
-                        <button
-                          className="booking-action-btn booking-action-btn--confirm"
-                          onClick={() => handleUpdateStatus(booking.id, 'CONFIRMED')}
-                          type="button"
-                        >
-                          <FiCheckCircle /> Confirm
-                        </button>
-                        <button
-                          className="booking-action-btn booking-action-btn--cancel"
-                          onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
-                          type="button"
-                        >
-                          <FiXCircle /> Cancel
-                        </button>
+                        {String(booking.status || '').toUpperCase() === 'PENDING' ? (
+                          <>
+                            <button
+                              className="booking-action-btn booking-action-btn--confirm"
+                              onClick={() => handleUpdateStatus(booking.id, 'CONFIRMED')}
+                              type="button"
+                            >
+                              <FiCheckCircle /> Confirm
+                            </button>
+                            <button
+                              className="booking-action-btn booking-action-btn--cancel"
+                              onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
+                              type="button"
+                            >
+                              <FiXCircle /> Cancel
+                            </button>
+                          </>
+                        ) : String(booking.status || '').toUpperCase() === 'CONFIRMED' ? (
+                          <>
+                            <span className="booking-action-btn booking-action-btn--disabled">Confirmed</span>
+                            <button
+                              className="booking-action-btn booking-action-btn--cancel"
+                              onClick={() => handleUpdateStatus(booking.id, 'CANCELLED')}
+                              type="button"
+                            >
+                              <FiXCircle /> Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <span className="booking-action-btn booking-action-btn--disabled">No actions available</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -289,5 +350,22 @@ export function BookingsPage() {
         </>
       )}
     </div>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Cancel booking?"
+        message="Please provide a reason before cancelling this booking."
+        confirmLabel="Cancel booking"
+        confirmTone="danger"
+        loading={saving}
+        reason={cancelReason}
+        reasonLabel="Cancellation reason"
+        reasonPlaceholder="Tell the guest why you are cancelling this booking"
+        reasonRequired
+        onReasonChange={setCancelReason}
+        onConfirm={confirmCancel}
+        onCancel={closeConfirm}
+      />
+    </>
   );
 }

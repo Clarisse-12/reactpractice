@@ -28,7 +28,7 @@ export function storeReducer(state: State, action: Action): State {
     case 'SET_USER':
       return { ...state, user: action.payload }
     case 'LOGOUT':
-      return { ...state, user: null }
+      return { ...state, user: null, saved: [] }
     case 'SET_DARKMODE':
       return { ...state, darkMode: action.payload }
     case 'SET_AUTH_READY':

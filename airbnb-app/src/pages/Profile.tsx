@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/StoreContext'
-import { updateUser, changePassword } from '../services/api'
+import { updateUser, changePassword, uploadAvatar } from '../services/api'
 import { FiLock, FiEye, FiEyeOff, FiX } from 'react-icons/fi'
 import './Profile.css'
 
@@ -27,6 +27,9 @@ export default function Profile() {
   const [pwLoading, setPwLoading] = useState(false)
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [localPreview, setLocalPreview] = useState('')
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     setForm({
@@ -53,6 +56,26 @@ export default function Profile() {
         alert('Profile updated')
       })
       .catch((err) => alert(err?.message || 'Failed to update'))
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLocalPreview(URL.createObjectURL(file))
+    if (!user.id) return
+    setUploading(true)
+    try {
+      const res = await uploadAvatar(user.id, file)
+      if (res?.user) {
+        dispatch({ type: 'SET_USER', payload: res.user })
+        setForm((p) => ({ ...p, avatar: res.user.avatar || '' }))
+        alert('Avatar uploaded')
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Failed to upload avatar')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -109,7 +132,24 @@ export default function Profile() {
         {/* Sidebar */}
         <aside className="profile-card profile-card--summary">
           <div className="profile-avatar" aria-hidden="true">
-            {form.avatar ? <img src={form.avatar} alt="Profile avatar" /> : <span>{initials}</span>}
+            {localPreview ? (
+              <img src={localPreview} alt="Avatar preview" />
+            ) : form.avatar ? (
+              <img src={form.avatar} alt="Profile avatar" />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </div>
+
+          <div className="profile-avatar__actions">
+            <input ref={fileInputRef} id="avatarFile" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+            <button
+              type="button"
+              className="profile-upload-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? 'Uploading...' : 'Upload Avatar'}
+            </button>
           </div>
 
           <div className="profile-summary__content">

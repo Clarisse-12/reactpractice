@@ -1,4 +1,4 @@
-export const apiBaseUrl = "/api/v1";
+export const apiBaseUrl = "https://node-js-7e4x.onrender.com/api/v1";
 
 const getToken = (): string | null => {
   return localStorage.getItem("auth_token")
@@ -84,6 +84,14 @@ export const uploadListingPhotos = async (listingId: string, files: File[]) => {
   return handleResponse<any>(res)
 }
 
+export const uploadAvatar = async (userId: string, file: File) => {
+  const form = new FormData()
+  form.append('image', file)
+  const headers: Record<string,string> = { ...(authHeaders() as Record<string,string>) }
+  const res = await fetch(`${apiBaseUrl}/upload/users/${userId}/avatar`, { method: 'POST', headers, body: form })
+  return handleResponse<any>(res)
+}
+
 export const deleteListingPhoto = async (listingId: string, photoId: string) => {
   const headers: Record<string,string> = { ...(authHeaders() as Record<string,string>) }
   const res = await fetch(`${apiBaseUrl}/upload/listings/${listingId}/photos/${photoId}`, { method: "DELETE", headers })
@@ -106,9 +114,14 @@ export const createBooking = async (payload: { listingId: string; checkIn: strin
 
 export const getBookings = async () => apiGet<{ data: any[]; meta?: any }>("/bookings", true)
 
-export const updateBookingStatus = async (id: string, status: string) => apiPut<any>(`/bookings/${id}`, { status }, true)
+export const updateBookingStatus = async (id: string, status: string, reason?: string) =>
+  apiPut<any>(`/bookings/${id}`, { status, reason }, true)
 
-export const deleteBooking = async (id: string) => apiDelete<any>(`/bookings/${id}`, true)
+export const deleteBooking = async (id: string, reason?: string) => {
+  const headers: Record<string,string> = { "Content-Type": "application/json", ...(authHeaders() as Record<string,string>) }
+  const res = await fetch(`${apiBaseUrl}/bookings/${id}`, { method: 'DELETE', headers, body: JSON.stringify({ reason }) })
+  return handleResponse<any>(res)
+}
 
 export const getUsers = async () => apiGet<any[]>("/users", true)
 
@@ -124,8 +137,11 @@ export const getAdminMonthlyStats = async (year?: number) => {
 export const getAdminUsers = async () => apiGet<any[]>("/admin/users", true)
 export const getAdminListings = async () => apiGet<any[]>("/admin/listings", true)
 export const getAdminBookings = async () => apiGet<any[]>("/admin/bookings", true)
-export const setAdminUserStatus = async (id: string, isActive: boolean) =>
-  apiPut<any>(`/admin/users/${id}/status`, { isActive }, true)
+export const setAdminUserStatus = async (id: string, isActive: boolean) => {
+  const headers: Record<string,string> = { "Content-Type": "application/json", ...(authHeaders() as Record<string,string>) }
+  const res = await fetch(`${apiBaseUrl}/admin/users/${id}/status`, { method: 'PATCH', headers, body: JSON.stringify({ isActive }) })
+  return handleResponse<any>(res)
+}
 export const deleteAdminUser = async (id: string) => apiDelete<any>(`/admin/users/${id}`, true)
 
 export const updateUser = async (id: string, payload: unknown) => apiPut<any>(`/users/${id}`, payload, true)

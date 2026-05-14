@@ -19,6 +19,10 @@ const sanitizeUser = <T extends { password: string; resetToken: string | null; r
   return safeUser;
 };
 
+const canAccessUserResource = (requestUserId: string | undefined, requestRole: string | undefined, targetUserId: string): boolean => {
+  return requestRole === "ADMIN" || requestUserId === targetUserId;
+};
+
 export const getAllUsers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
@@ -77,6 +81,12 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
       return;
     }
 
+    const authReq = req as Request & { userId?: string; role?: string };
+    if (!canAccessUserResource(authReq.userId, authReq.role, id)) {
+      res.status(403).json({ message: "Forbidden" });
+      return;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
@@ -108,6 +118,12 @@ export const getUserListings = async (req: Request, res: Response, next: NextFun
       return;
     }
 
+    const authReq = req as Request & { userId?: string; role?: string };
+    if (!canAccessUserResource(authReq.userId, authReq.role, id)) {
+      res.status(403).json({ message: "You can only view your own listings" });
+      return;
+    }
+
     const user = await prisma.user.findFirst({ where: { id } });
     if (!user) {
       res.status(404).json({ message: "User not found" });
@@ -126,6 +142,12 @@ export const getUserBookings = async (req: Request, res: Response, next: NextFun
     const id = req.params.id;
     if (!isUuid(id)) {
       res.status(400).json({ message: "Invalid user id" });
+      return;
+    }
+
+    const authReq = req as Request & { userId?: string; role?: string };
+    if (!canAccessUserResource(authReq.userId, authReq.role, id)) {
+      res.status(403).json({ message: "Forbidden" });
       return;
     }
 
@@ -236,6 +258,15 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
       res.status(404).json({ message: "User not found" });
       return;
     }
+
+      // Authorization: only admins or the user themselves can update
+      const authReq = req as Request & { userId?: string; role?: string };
+      const requesterId = authReq.userId;
+      const requesterRole = authReq.role;
+      if (!canAccessUserResource(requesterId, requesterRole, id)) {
+        res.status(403).json({ message: "Forbidden" });
+        return;
+      }
 
     const user = await prisma.user.update({
       where: { id },

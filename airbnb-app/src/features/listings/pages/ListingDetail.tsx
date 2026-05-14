@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { FaStar, FaArrowLeft, FaHeart, FaRegHeart, FaMapMarkerAlt, FaUser } from 'react-icons/fa'
 import { getListingById, createBooking } from '../../../services/api'
+import { sendMessage } from '../../../services/messages'
 import { useFavorites } from '../hooks/useFavorites'
 import { useStore } from '../../../store/StoreContext'
 import { Spinner } from '../../../shared/components/Spinner'
@@ -20,6 +21,10 @@ export default function ListingDetail() {
   const [bookingError, setBookingError] = useState('')
   const [bookingLoading, setBookingLoading] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [messageText, setMessageText] = useState('')
+  const [messageError, setMessageError] = useState('')
+  const [messageSuccess, setMessageSuccess] = useState('')
+  const [messageLoading, setMessageLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -67,6 +72,57 @@ export default function ListingDetail() {
       }
     } finally {
       setBookingLoading(false)
+    }
+  }
+
+  const handleMessageHost = (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessageError('')
+    setMessageSuccess('')
+
+    const currentUser = state.user
+    const host = listing.host
+
+    if (!currentUser) {
+      setMessageError('Please sign in to message the host')
+      return
+    }
+
+    if (!host?.id) {
+      setMessageError('Host information is not available for this listing')
+      return
+    }
+
+    if (currentUser.id === host.id) {
+      setMessageError('You cannot message yourself')
+      return
+    }
+
+    if (!messageText.trim()) {
+      setMessageError('Please enter a message')
+      return
+    }
+
+    setMessageLoading(true)
+    try {
+      sendMessage({
+        listingId: listing.id,
+        listingTitle: listing.title,
+        hostId: host.id,
+        hostName: host.name || 'Host',
+        guestId: currentUser.id,
+        guestName: currentUser.name || currentUser.username || 'Guest',
+        senderId: currentUser.id,
+        senderName: currentUser.name || currentUser.username || 'Guest',
+        text: messageText,
+      })
+      setMessageText('')
+      setMessageSuccess('Message sent to host')
+      window.setTimeout(() => setMessageSuccess(''), 2000)
+    } catch {
+      setMessageError('Failed to send message')
+    } finally {
+      setMessageLoading(false)
     }
   }
 
@@ -225,6 +281,24 @@ export default function ListingDetail() {
           <div className="listing-detail__saved-count">
             <FaHeart /> Save this listing to your favorites
           </div>
+
+          <section className="listing-detail__message-box">
+            <h3>Message the host</h3>
+            <p>Ask questions about availability, amenities, or anything else before booking.</p>
+            <form className="listing-detail__message-form" onSubmit={handleMessageHost}>
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Write your message to the host..."
+                rows={5}
+              />
+              {messageError && <p className="listing-detail__message-error">{messageError}</p>}
+              {messageSuccess && <p className="listing-detail__message-success">{messageSuccess}</p>}
+              <button type="submit" className="listing-detail__message-btn" disabled={messageLoading}>
+                {messageLoading ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          </section>
         </aside>
       </div>
     </div>

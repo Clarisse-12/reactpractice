@@ -109,6 +109,7 @@ export default function ChatWidget() {
 
       <button className="chat-fab" onClick={() => setOpen((o) => !o)} aria-label="Open assistant">
         <FiMessageCircle />
+        <span className="chat-fab__label">Talk to chatbot</span>
       </button>
     </div>
   )

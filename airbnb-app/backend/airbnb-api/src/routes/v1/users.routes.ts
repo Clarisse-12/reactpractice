@@ -534,10 +534,10 @@ usersRouter.post("/", createUser);
 // Request to become host (authenticated user)
 usersRouter.post("/:id/request-host", authenticate, requestHost);
 
-usersRouter.get("/:id", getUserById);
-usersRouter.get("/:id/listings", getUserListings);
-usersRouter.get("/:id/bookings", getUserBookings);
-usersRouter.put("/:id", updateUser);
-usersRouter.delete("/:id", deleteUser);
+usersRouter.get("/:id", authenticate, getUserById);
+usersRouter.get("/:id/listings", authenticate, getUserListings);
+usersRouter.get("/:id/bookings", authenticate, getUserBookings);
+usersRouter.put("/:id", authenticate, updateUser);
+usersRouter.delete("/:id", authenticate, deleteUser);
 
 export default usersRouter;

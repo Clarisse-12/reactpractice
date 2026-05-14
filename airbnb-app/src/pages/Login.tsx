@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Signup.css'
 import './Login.css'
@@ -11,6 +11,8 @@ export default function Login() {
   const { dispatch } = useStore()
   const [form, setForm] = useState({ email: '', password: '', remember: false })
   const [loginError, setLoginError] = useState('')
+  const [loginSuccess, setLoginSuccess] = useState('')
+  const loginTimerRef = useRef<number | null>(null)
 
   // Forgot password state
   const [showForgot, setShowForgot] = useState(false)
@@ -27,24 +29,37 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError('')
+    setLoginSuccess('')
     login({ email: form.email, password: form.password })
       .then((res) => {
         if (res.token) auth.saveToken(res.token)
         if (res.user) {
           dispatch({ type: 'SET_USER', payload: res.user })
+          setLoginSuccess('You have signed in successfully.')
           const role = String(res.user.role || 'guest').toLowerCase()
-          if (role === 'admin') {
-            navigate('/admin/dashboard')
-            return
-          }
+          if (loginTimerRef.current) window.clearTimeout(loginTimerRef.current)
+          loginTimerRef.current = window.setTimeout(() => {
+            if (role === 'admin') {
+              navigate('/admin/dashboard')
+              return
+            }
 
-          navigate(role === 'guest' ? '/listings' : '/dashboard/overview')
+            navigate(role === 'guest' ? '/listings' : '/dashboard/overview')
+          }, 2000)
         } else {
-          navigate('/listings')
+          setLoginSuccess('You have signed in successfully.')
+          if (loginTimerRef.current) window.clearTimeout(loginTimerRef.current)
+          loginTimerRef.current = window.setTimeout(() => navigate('/listings'), 2000)
         }
       })
       .catch((err) => setLoginError(err?.message || 'Login failed'))
   }
+
+  useEffect(() => {
+    return () => {
+      if (loginTimerRef.current) window.clearTimeout(loginTimerRef.current)
+    }
+  }, [])
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,6 +135,7 @@ export default function Login() {
             </div>
 
             {loginError && <p className="login-error">{loginError}</p>}
+            {loginSuccess && <p className="login-success">{loginSuccess}</p>}
 
             <button type="submit" className="signup-submit-btn">Sign In</button>
           </form>

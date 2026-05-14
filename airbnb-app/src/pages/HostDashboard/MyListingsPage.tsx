@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiEdit3, FiPlus, FiTrash2, FiMapPin, FiHome, FiDollarSign, FiUploadCloud, FiX } from 'react-icons/fi';
 import { deleteListing, deleteListingPhoto, me, updateListing, uploadListingPhotos } from '../../services/api';
 import './MyListingsPage.css';
+import ConfirmModal from '../../components/ConfirmModal';
 
 interface Photo { id: string; url: string; publicId?: string; optimizedUrl?: string }
 interface Listing {
@@ -65,6 +66,9 @@ export function MyListingsPage() {
   };
 
   const [generating, setGenerating] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -131,12 +135,28 @@ export function MyListingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this listing?')) return;
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const closeConfirm = () => {
+    if (confirmLoading) return;
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteListing(id);
-      setListings((prev) => prev.filter((l) => l.id !== id));
+      await deleteListing(pendingDeleteId);
+      setListings((prev) => prev.filter((l) => l.id !== pendingDeleteId));
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     } catch (err: any) {
       setError(err?.message || 'Failed to delete listing');
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -386,6 +406,17 @@ export function MyListingsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete listing?"
+        message="Are you sure you want to delete this listing? This action cannot be undone."
+        confirmLabel="Delete listing"
+        confirmTone="danger"
+        loading={confirmLoading}
+        onConfirm={confirmDelete}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

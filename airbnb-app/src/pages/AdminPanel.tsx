@@ -5,6 +5,7 @@ import { deleteAdminUser, getAdminMonthlyStats, getAdminOverview, getAdminUsers,
 import { useStore } from '../store/StoreContext'
 import './AdminPanel.css'
 import { useNavigate } from 'react-router-dom'
+import ConfirmModal from '../components/ConfirmModal'
 
 type AdminPage = 'overview' | 'users'
 
@@ -68,6 +69,9 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<AdminUser | null>(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
 
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear()
@@ -121,27 +125,37 @@ export default function AdminPanel() {
   }
 
   const handleDeleteUser = async (user: AdminUser) => {
-    if (!window.confirm(`Delete ${user.name || user.email}? This cannot be undone.`)) {
-      return
-    }
+    setPendingDeleteUser(user)
+    setConfirmOpen(true)
+  }
 
-    setActionId(user.id)
+  const closeConfirm = () => {
+    if (confirmLoading) return
+    setConfirmOpen(false)
+    setPendingDeleteUser(null)
+  }
+
+  const confirmDeleteUser = async () => {
+    if (!pendingDeleteUser) return
+    setActionId(pendingDeleteUser.id)
+    setConfirmLoading(true)
     try {
-      await deleteAdminUser(user.id)
+      await deleteAdminUser(pendingDeleteUser.id)
       await loadData()
+      setConfirmOpen(false)
+      setPendingDeleteUser(null)
     } catch (err: any) {
       setError(err?.message || 'Unable to delete user')
     } finally {
       setActionId(null)
+      setConfirmLoading(false)
     }
   }
 
   const statusBreakdown = useMemo(() => [
     { label: 'Users', value: summary.totalUsers, icon: <FiUsers /> },
-    { label: 'Active users', value: summary.activeUsers, icon: <FiShield /> },
     { label: 'Listings', value: summary.totalListings, icon: <FiHome /> },
     { label: 'Bookings', value: summary.totalBookings, icon: <FiDatabase /> },
-    { label: 'Confirmed', value: summary.confirmedBookings, icon: <FiActivity /> },
     { label: 'Revenue', value: formatCurrency(summary.totalRevenue), icon: <FiRefreshCw /> },
   ], [summary])
 
@@ -186,14 +200,7 @@ export default function AdminPanel() {
           <span>Total guests</span>
           <strong>{summary.totalGuests}</strong>
         </article>
-        <article className="admin-insight-card">
-          <span>Pending bookings</span>
-          <strong>{summary.pendingBookings}</strong>
-        </article>
-        <article className="admin-insight-card">
-          <span>Cancelled bookings</span>
-          <strong>{summary.cancelledBookings}</strong>
-        </article>
+        {/* Pending and cancelled booking summaries removed per admin preference */}
       </div>
 
       <section className="admin-panel admin-panel--full">
@@ -413,6 +420,17 @@ export default function AdminPanel() {
           {currentPage === 'overview' ? renderOverviewPage() : renderUserManagementPage()}
         </main>
       </div>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete user?"
+        message={`Are you sure you want to delete ${pendingDeleteUser?.name || pendingDeleteUser?.email || 'this user'}? This action cannot be undone.`}
+        confirmLabel="Delete user"
+        confirmTone="danger"
+        loading={confirmLoading}
+        onConfirm={confirmDeleteUser}
+        onCancel={closeConfirm}
+      />
     </section>
   )
 }

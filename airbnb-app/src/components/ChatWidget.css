@@ -9,7 +9,6 @@
 }
 
 .chat-fab {
-  width: 56px;
   height: 56px;
   border-radius: 999px;
   border: none;
@@ -20,7 +19,15 @@
   justify-content: center;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
   cursor: pointer;
-  font-size: 22px;
+  font-size: 18px;
+  padding: 0 14px;
+  gap: 10px;
+}
+
+.chat-fab__label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-block;
 }
 
 .chat-panel {
@@ -132,5 +139,6 @@
 
 @media (max-width: 480px) {
   .chat-panel { width: 320px; height: 380px }
-  .chat-fab { width: 50px; height: 50px }
+  .chat-fab { height: 50px; padding: 0 10px }
+  .chat-fab__label { display: none }
 }

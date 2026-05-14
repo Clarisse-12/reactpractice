@@ -102,15 +102,19 @@ export default function Navbar() {
         {state.user ? (
           <div className="navbar__profile-menu">
             {role === 'admin' ? (
-              <div className="navbar__profile-card navbar__profile-card--guest" aria-label="Admin profile">
+              <Link to="/profile" className="navbar__profile-card navbar__profile-card--guest" aria-label="Admin profile">
                 <span className="navbar__profile-avatar navbar__profile-avatar--guest">
-                  <FiShield className="navbar__icon" />
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt="Profile avatar" />
+                  ) : (
+                    <FiShield className="navbar__icon" />
+                  )}
                 </span>
                 <span className="navbar__profile-copy">
                   <strong>{profileName}</strong>
                   <small>{profileEmail}</small>
                 </span>
-              </div>
+              </Link>
             ) : (
               <Link to="/profile" className="navbar__profile-card" aria-label="Profile">
                 <span className="navbar__profile-avatar">

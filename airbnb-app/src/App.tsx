@@ -9,6 +9,7 @@ import Signup from './pages/Signup'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import GuestDashboard from './pages/GuestDashboard'
+import GuestMessagesPage from './pages/GuestMessages'
 import AdminPanel from './pages/AdminPanel'
 import ProtectedRoute from './components/ProtectedRoute'
 import { ListingsPage } from './features/listings'
@@ -44,6 +45,7 @@ function App() {
 
           {/* Guest only */}
           <Route path="/guest/bookings" element={<ProtectedRoute allowedRole="guest"><GuestDashboard /></ProtectedRoute>} />
+          <Route path="/guest/messages" element={<ProtectedRoute allowedRole="guest"><GuestMessagesPage /></ProtectedRoute>} />
 
           {/* Host only */}
           <Route path="/dashboard" element={<Navigate to="/dashboard/overview" replace />} />

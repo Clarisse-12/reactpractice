@@ -35,7 +35,7 @@ export default function Navbar() {
       return [
         { to: '/', label: 'Home' },
         { to: '/listings', label: 'Listings' },
-        { to: '/guest/bookings', label: 'My Bookings' },
+        { to: '/guest/bookings', label: 'Dashboard' },
       ]
     }
 

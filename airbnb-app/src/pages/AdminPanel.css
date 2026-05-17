@@ -255,6 +255,11 @@
   color: #b91c1c;
 }
 
+.admin-badge.is-pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+
 .admin-badge.status-pending {
   background: rgba(245, 158, 11, 0.16);
   color: #b45309;

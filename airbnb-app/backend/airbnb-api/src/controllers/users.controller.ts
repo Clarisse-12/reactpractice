@@ -318,6 +318,9 @@ type HostRequest = {
   id: string;
   userId: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
+  fullName: string;
+  address: string;
+  documentInfo: string;
   message?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -369,11 +372,15 @@ export const requestHost = async (req: Request, res: Response, next: NextFunctio
     }
 
     const now = new Date().toISOString();
+    const body = (req.body ?? {}) as Record<string, unknown>;
     const reqObj: HostRequest = {
       id: uuidv4(),
       userId: id,
       status: "PENDING",
-      message: String((req.body && (req.body as any).message) ?? null),
+      fullName: String(body.fullName ?? user.name ?? ""),
+      address: String(body.address ?? ""),
+      documentInfo: String(body.documentInfo ?? ""),
+      message: body.message != null ? String(body.message) : null,
       createdAt: now,
       updatedAt: now
     };
@@ -390,7 +397,21 @@ export const requestHost = async (req: Request, res: Response, next: NextFunctio
 export const listHostRequests = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const items = await readHostRequests();
-    res.json(items);
+    // Enrich each request with user info from DB
+    const enriched = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: item.userId },
+            select: { name: true, email: true, username: true }
+          });
+          return { ...item, user: user ?? null };
+        } catch {
+          return { ...item, user: null };
+        }
+      })
+    );
+    res.json(enriched);
   } catch (error) {
     next({ error, operation: "listHostRequests" });
   }

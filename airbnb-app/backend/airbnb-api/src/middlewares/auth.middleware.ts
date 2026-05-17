@@ -43,7 +43,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
     prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, isActive: true }
+      select: { id: true, isActive: true, role: true }
     }).then((user) => {
       if (!user) {
         res.status(401).json({ message: "Invalid or expired token" });
@@ -56,7 +56,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
       }
 
       req.userId = decoded.userId;
-      req.role = decoded.role;
+      req.role = user.role;
       next();
     }).catch(() => {
       res.status(401).json({ message: "Invalid or expired token" });

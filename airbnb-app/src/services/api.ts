@@ -1,4 +1,4 @@
-export const apiBaseUrl = "https://node-js-7e4x.onrender.com/api/v1";
+export const apiBaseUrl = "/api/v1";
 
 const getToken = (): string | null => {
   return localStorage.getItem("auth_token")
@@ -145,6 +145,24 @@ export const setAdminUserStatus = async (id: string, isActive: boolean) => {
 export const deleteAdminUser = async (id: string) => apiDelete<any>(`/admin/users/${id}`, true)
 
 export const updateUser = async (id: string, payload: unknown) => apiPut<any>(`/users/${id}`, payload, true)
+
+export const apiPatch = async <T,>(path: string, body: unknown, authFlag = false): Promise<T> => {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (authFlag) Object.assign(headers, authHeaders())
+  const res = await fetch(`${apiBaseUrl}${path}`, { method: "PATCH", headers, body: JSON.stringify(body) })
+  return handleResponse<T>(res)
+}
+
+// ── Host-request API ──────────────────────────────────────────────────────────
+export const submitHostRequest = async (
+  userId: string,
+  payload: { fullName: string; address: string; documentInfo: string; message?: string }
+) => apiPost<any>(`/users/${userId}/request-host`, payload, true)
+
+export const getHostRequests = async () => apiGet<any[]>('/users/host-requests', true)
+
+export const respondHostRequest = async (requestId: string, action: 'approve' | 'reject') =>
+  apiPatch<any>(`/users/host-requests/${requestId}`, { action }, true)
 
 export const aiChat = async (message: string, sessionId: string) => {
   const headers: Record<string,string> = { "Content-Type": "application/json" }

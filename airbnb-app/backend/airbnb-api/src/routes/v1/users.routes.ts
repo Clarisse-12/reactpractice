@@ -525,9 +525,9 @@ const usersRouter = Router();
 usersRouter.get("/stats", authenticate, requireAdmin, getUserStats);
 usersRouter.get("/", authenticate, requireAdmin, getAllUsers);
 
-// Host request management
-usersRouter.get("/host-requests", authenticate, requireHost, listHostRequests);
-usersRouter.patch("/host-requests/:requestId", authenticate, requireHost, handleHostRequest);
+// Host request management (admin only)
+usersRouter.get("/host-requests", authenticate, requireAdmin, listHostRequests);
+usersRouter.patch("/host-requests/:requestId", authenticate, requireAdmin, handleHostRequest);
 
 usersRouter.post("/", createUser);
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import "./Navbar.css";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon, FiShield } from "react-icons/fi";
+import { FiHeart, FiPlus, FiX, FiUser, FiSun, FiMoon, FiShield, FiGlobe } from "react-icons/fi";
 import { auth } from '../services/api'
 import { Transition } from "@headlessui/react";
 import numeral from "numeral";
@@ -75,6 +75,13 @@ export default function Navbar() {
       </nav>
 
       <div className="navbar__actions">
+        {role === 'guest' && (
+          <Link to="/become-host" className="navbar__become-host" aria-label="Become a host">
+            <FiGlobe className="navbar__icon" aria-hidden="true" />
+            Become a host
+          </Link>
+        )}
+
         {role !== 'admin' ? (
           <>
             <button 
@@ -205,6 +212,36 @@ export default function Navbar() {
           </Transition.Child>
         </div>
       </Transition>
+
+      
+
+      <style>{`
+        .navbar__become-host {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 18px;
+          min-height: 46px;
+          border-radius: 999px;
+          border: 1px solid var(--surface-border);
+          background: var(--surface-bg);
+          color: var(--app-text);
+          font-weight: 700;
+          font-size: 0.92rem;
+          cursor: pointer;
+          box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+          transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+          white-space: nowrap;
+        }
+        .navbar__become-host:hover {
+          transform: translateY(-1px);
+          border-color: rgba(255, 90, 95, 0.3);
+          background: rgba(255, 90, 95, 0.04);
+        }
+        @media (max-width: 768px) {
+          .navbar__become-host { display: none; }
+        }
+      `}</style>
 
       <style>{`
         .navbar__admin-pill {

@@ -1,13 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FiActivity, FiAlertTriangle, FiDatabase, FiHome, FiRefreshCw, FiShield, FiTrash2, FiToggleLeft, FiUsers } from 'react-icons/fi'
+import { FiActivity, FiAlertTriangle, FiDatabase, FiHome, FiRefreshCw, FiShield, FiTrash2, FiToggleLeft, FiUsers, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { deleteAdminUser, getAdminMonthlyStats, getAdminOverview, getAdminUsers, setAdminUserStatus } from '../services/api'
+import { deleteAdminUser, getAdminMonthlyStats, getAdminOverview, getAdminUsers, setAdminUserStatus, getHostRequests, respondHostRequest } from '../services/api'
 import { useStore } from '../store/StoreContext'
 import './AdminPanel.css'
 import { useNavigate } from 'react-router-dom'
 import ConfirmModal from '../components/ConfirmModal'
 
-type AdminPage = 'overview' | 'users'
+type AdminPage = 'overview' | 'users' | 'host-requests'
+
+type HostRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+type HostRequest = {
+  id: string
+  userId: string
+  status: HostRequestStatus
+  fullName: string
+  address: string
+  documentInfo: string
+  message?: string | null
+  createdAt: string
+  user?: { name: string; email: string; username: string } | null
+}
 
 type AdminSummary = {
   totalUsers: number
@@ -73,6 +87,13 @@ export default function AdminPanel() {
   const [pendingDeleteUser, setPendingDeleteUser] = useState<AdminUser | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
+  // Host requests state
+  const [hostRequests, setHostRequests] = useState<HostRequest[]>([])
+  const [hostRequestsLoading, setHostRequestsLoading] = useState(false)
+  const [hostRequestsError, setHostRequestsError] = useState('')
+  const [hostActionId, setHostActionId] = useState<string | null>(null)
+  const [hrFilter, setHrFilter] = useState<'ALL' | HostRequestStatus>('ALL')
+
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear()
     const years = []
@@ -81,6 +102,31 @@ export default function AdminPanel() {
     }
     return years
   }, [])
+
+  const loadHostRequests = async () => {
+    setHostRequestsLoading(true)
+    setHostRequestsError('')
+    try {
+      const data = await getHostRequests()
+      setHostRequests(Array.isArray(data) ? data : [])
+    } catch (err: any) {
+      setHostRequestsError(err?.message || 'Failed to load host requests')
+    } finally {
+      setHostRequestsLoading(false)
+    }
+  }
+
+  const handleHostRequestAction = async (requestId: string, action: 'approve' | 'reject') => {
+    setHostActionId(requestId)
+    try {
+      await respondHostRequest(requestId, action)
+      await loadHostRequests()
+    } catch (err: any) {
+      setHostRequestsError(err?.message || 'Failed to process request')
+    } finally {
+      setHostActionId(null)
+    }
+  }
 
   const loadData = async (year?: number) => {
     setLoading(true)
@@ -110,6 +156,7 @@ export default function AdminPanel() {
     }
 
     void loadData()
+    void loadHostRequests()
   }, [navigate, state.user?.role])
 
   const handleToggleUser = async (user: AdminUser) => {
@@ -293,6 +340,141 @@ export default function AdminPanel() {
     </>
   )
 
+  const pendingCount = hostRequests.filter((r) => r.status === 'PENDING').length
+
+  const filteredHostRequests = hrFilter === 'ALL' ? hostRequests : hostRequests.filter((r) => r.status === hrFilter)
+
+  const renderHostRequestsPage = () => (
+    <>
+      <header className="admin-hero">
+        <div>
+          <p className="admin-hero__eyebrow">Host Management</p>
+          <h1 className="admin-hero__title">Host Requests</h1>
+          <p className="admin-hero__text">
+            Review, approve or decline host applications from users.
+          </p>
+        </div>
+        <div className="admin-hero__meta">
+          <span className="admin-pill"><FiHome /> {pendingCount} pending</span>
+          <button type="button" className="admin-refresh" onClick={() => void loadHostRequests()} disabled={hostRequestsLoading}>
+            <FiRefreshCw /> Refresh
+          </button>
+        </div>
+      </header>
+
+      {hostRequestsError ? <div className="admin-alert"><FiAlertTriangle /> {hostRequestsError}</div> : null}
+
+      {/* Status filter tabs */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+        {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setHrFilter(f)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '999px',
+              border: hrFilter === f ? '1.5px solid #ff5a5f' : '1.5px solid var(--surface-border)',
+              background: hrFilter === f ? '#ff5a5f' : 'var(--surface-bg)',
+              color: hrFilter === f ? '#fff' : 'var(--app-text)',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              transition: 'all 0.18s',
+            }}
+          >
+            {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
+            {f === 'PENDING' && pendingCount > 0 && (
+              <span style={{ marginLeft: '6px', background: hrFilter === 'PENDING' ? 'rgba(255,255,255,0.25)' : '#ff5a5f', color: '#fff', borderRadius: '999px', padding: '1px 7px', fontSize: '0.75rem' }}>
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <section className="admin-panel admin-panel--full">
+        <div className="admin-panel__head">
+          <div>
+            <p className="admin-panel__kicker">Applications</p>
+            <h2>Host Requests</h2>
+          </div>
+          <span className="admin-panel__count">{filteredHostRequests.length} request{filteredHostRequests.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Requester</th>
+                <th>Full Name</th>
+                <th>Address</th>
+                <th>Document Info</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hostRequestsLoading ? (
+                <tr><td colSpan={7}>Loading requests...</td></tr>
+              ) : filteredHostRequests.length === 0 ? (
+                <tr><td colSpan={7}>No host requests found</td></tr>
+              ) : filteredHostRequests.map((req) => (
+                <tr key={req.id}>
+                  <td>
+                    <strong>{req.user?.name || req.userId.slice(0, 8)}</strong>
+                    <div className="admin-table__sub">{req.user?.email || ''}</div>
+                  </td>
+                  <td>{req.fullName || '—'}</td>
+                  <td style={{ maxWidth: '160px', wordBreak: 'break-word' }}>{req.address || '—'}</td>
+                  <td style={{ maxWidth: '180px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{req.documentInfo || '—'}</td>
+                  <td>
+                    <span className={`admin-badge ${req.status === 'APPROVED' ? 'is-active' : req.status === 'REJECTED' ? 'is-disabled' : 'is-pending'}`}>
+                      {req.status === 'PENDING' && <FiClock style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                      {req.status === 'APPROVED' && <FiCheckCircle style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                      {req.status === 'REJECTED' && <FiXCircle style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                      {req.status.charAt(0) + req.status.slice(1).toLowerCase()}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {new Date(req.createdAt).toLocaleDateString()}
+                  </td>
+                  <td>
+                    {req.status === 'PENDING' ? (
+                      <div className="admin-table__actions">
+                        <button
+                          type="button"
+                          style={{ color: '#059669', borderColor: '#059669' }}
+                          onClick={() => void handleHostRequestAction(req.id, 'approve')}
+                          disabled={hostActionId === req.id}
+                          title="Approve request"
+                        >
+                          <FiCheckCircle /> Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="is-danger"
+                          onClick={() => void handleHostRequestAction(req.id, 'reject')}
+                          disabled={hostActionId === req.id}
+                          title="Reject request"
+                        >
+                          <FiXCircle /> Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Processed</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
+  )
+
   const renderUserManagementPage = () => (
     <>
       <header className="admin-hero">
@@ -400,6 +582,28 @@ export default function AdminPanel() {
             >
               <FiUsers /> User Management
             </button>
+            <button
+              type="button"
+              className={`admin-nav-item ${currentPage === 'host-requests' ? 'is-active' : ''}`}
+              onClick={() => { setCurrentPage('host-requests'); void loadHostRequests() }}
+              style={{ position: 'relative' }}
+            >
+              <FiHome /> Host Management
+              {pendingCount > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  background: '#ff5a5f',
+                  color: '#fff',
+                  borderRadius: '999px',
+                  padding: '1px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  lineHeight: '18px',
+                }}>
+                  {pendingCount}
+                </span>
+              )}
+            </button>
           </nav>
 
           <div className="admin-sidebar__footer">
@@ -417,7 +621,9 @@ export default function AdminPanel() {
 
         {/* Main Content */}
         <main className="admin-main">
-          {currentPage === 'overview' ? renderOverviewPage() : renderUserManagementPage()}
+          {currentPage === 'overview' && renderOverviewPage()}
+          {currentPage === 'users' && renderUserManagementPage()}
+          {currentPage === 'host-requests' && renderHostRequestsPage()}
         </main>
       </div>
 

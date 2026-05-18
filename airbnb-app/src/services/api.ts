@@ -1,4 +1,4 @@
-export const apiBaseUrl = "/api/v1";
+export const apiBaseUrl = "https://node-js-7e4x.onrender.com/api/v1";
 
 const getToken = (): string | null => {
   return localStorage.getItem("auth_token")
